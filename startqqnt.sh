@@ -48,7 +48,7 @@ bwrap --new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --bind-try "${QQ_DOWNLOAD_DIR}" "${QQ_DOWNLOAD_DIR}" \
     --bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
     --tmpfs /dev/shm  \
-    --ro-bind-try "${HOME}/.icons" "${HOME}/.icons" \${QQ_APP_DIR} \
+    --ro-bind-try "${HOME}/.icons" "${HOME}/.icons" \
     --ro-bind-try "${HOME}/.local/share/.icons" "${HOME}/.local/share/.icons" \
     --ro-bind-try "${XDG_CONFIG_HOME}/gtk-3.0" "${XDG_CONFIG_HOME}/gtk-3.0" \
     --setenv IBUS_USE_PORTAL 1 \
