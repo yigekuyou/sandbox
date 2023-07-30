@@ -52,5 +52,5 @@ bwrap --new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --ro-bind-try "${XDG_CONFIG_HOME}/gtk-3.0" "${XDG_CONFIG_HOME}/gtk-3.0" \
     --setenv IBUS_USE_PORTAL 1 \
     --setenv APPDIR ${APPDIR} \
-    ${APPDIR}/AppRun ${CMD##* }
+    ${APPDIR}/AppRun ${CMD#* }
 rm -rf /tmp/QQ
