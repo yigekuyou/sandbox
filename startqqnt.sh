@@ -82,11 +82,12 @@ USER_RUN_DIR="/run/user/$(id -u)"
 Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
     --symlink usr/lib /lib \
     --symlink usr/lib64 /lib64 \
-    --ro-bind /usr/bin/flatpak-xdg-open /bin/xdg-open \
+    --symlink usr/bin /bin \
+    --ro-bind /usr /usr \
+    --ro-bind /usr/bin/flatpak-xdg-open /usr/bin/xdg-open \
     --ro-bind /usr/bin/kdialog /usr/bin/kdialog  \
     --ro-bind /usr/bin/bash /bin/sh \
-    --ro-bind /usr/bin/bash /bin/bash \
-    --ro-bind /usr /usr \
+    --ro-bind /usr/bin/zsh /bin/zsh \
     --ro-bind /etc/machine-id /etc/machine-id \
     --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
     --ro-bind-try /run/systemd/userdb /run/systemd/userdb \
@@ -96,7 +97,6 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --dev-bind /dev /dev \
     --ro-bind /sys /sys \
     --ro-bind /etc/passwd /etc/passwd \
-    --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
     --ro-bind-try /run/systemd/userdb /run/systemd/userdb \
     --ro-bind /etc/resolv.conf /etc/resolv.conf \
     --ro-bind /etc/localtime /etc/localtime \
