@@ -1,5 +1,10 @@
 #!/usr/bin/zsh
 
+USER_RUN_DIR="/run/user/$(id -u)"
+XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+FONTCONFIG_HOME="${XDG_CONFIG_HOME}/fontconfig"
+
 function command_exists() {
 	local command="$1"
 	command -v "${command}" >/dev/null 2>&1
@@ -28,11 +33,11 @@ data=data
 CMD=$*
 QQdir=${CMD%% *}
 
-if [[ ${${CMD##* }##*\.} == appimage ]] {
+if [[ ${${CMD##* }##*\.} == AppImage ]] {
     unset CMD
     }
-if [[  ${QQdir##*\.} != appimage ]] {
-echo "only name./appimage"
+if [[  ${QQdir##*\.} != AppImage ]] {
+echo "only name./AppImage"
 return -1
 }
 
@@ -59,8 +64,9 @@ rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp
 QQ_HOTUPDATE_DIR="${QQ_APP_DIR}/versions"
 mkdir ${QQ_HOTUPDATE_DIR}
 QQ_HOTUPDATE_VERSION="3.2.0-16449"
-QQ_PREVIOUS_VERSIONS=("2.0.1-429" "2.0.1-453" "2.0.2-510" "2.0.3-543" "3.0.0-565" "3.0.0-571" "3.1.0-9332" "3.1.0-9572" "3.1.1-11223" "3.1.2-12912" "3.1.2-13107")
+QQ_PREVIOUS_VERSIONS=("2.0.1-429" "2.0.1-453" "2.0.2-510" "2.0.3-543" "3.0.0-565" "3.0.0-571" "3.1.0-9332" "3.1.0-9572" "3.1.1-11223" "3.1.2-12912" "3.1.2-13107" "3.2.0-16449" "3.2.0-16605" "3.2.0-16736" "3.2.1-16950" "3.2.1-17153" "3.2.1-17260" "3.2.1-17412" "3.2.1-17654" "3.2.1-17749" "3.2.1-17816" "3.2.2-18163")
 cd ${QQ_HOTUPDATE_DIR}
+rm -rf "${QQ_HOTUPDATE_DIR}/${QQ_HOTUPDATE_VERSION}"
 wget "https://aur.archlinux.org/cgit/aur.git/plain/config.json?h=linuxqq-nt-bwrap" --output-document=config.json
 cd /tmp/QQ
 HOTUPDATE="--ro-bind $APPDIR/resources/app ${QQ_HOTUPDATE_DIR}/${QQ_HOTUPDATE_VERSION}"
@@ -76,7 +82,7 @@ USER_RUN_DIR="/run/user/$(id -u)"
 Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
     --symlink usr/lib /lib \
     --symlink usr/lib64 /lib64 \
-    --ro-bind /usr/bin/wl-copy /bin/xdg-open \
+    --ro-bind /usr/bin/flatpak-xdg-open /bin/xdg-open \
     --ro-bind /usr/bin/kdialog /usr/bin/kdialog  \
     --ro-bind /usr/bin/bash /bin/sh \
     --ro-bind /usr/bin/bash /bin/bash \
@@ -90,6 +96,8 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --dev-bind /dev /dev \
     --ro-bind /sys /sys \
     --ro-bind /etc/passwd /etc/passwd \
+    --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
+    --ro-bind-try /run/systemd/userdb /run/systemd/userdb \
     --ro-bind /etc/resolv.conf /etc/resolv.conf \
     --ro-bind /etc/localtime /etc/localtime \
     --ro-bind ${QQ_HOTUPDATE_DIR} ${XDG_CONFIG_HOME}/QQ/versions \
@@ -101,6 +109,7 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --bind "${USER_RUN_DIR}" "${USER_RUN_DIR}" \
     --bind-try "${QQ_DOWNLOAD_DIR}" "${QQ_DOWNLOAD_DIR}" \
     --bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
+    --ro-bind-try "${FONTCONFIG_HOME}" "${FONTCONFIG_HOME}" \
     --tmpfs /dev/shm  \
     --ro-bind-try "${HOME}/.icons" "${HOME}/.icons" \
     --ro-bind-try "${HOME}/.local/share/.icons" "${HOME}/.local/share/.icons" \
