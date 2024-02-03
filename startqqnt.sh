@@ -28,7 +28,7 @@ function show_error_dialog() {
 
 QQ_APP_DIR=/tmp/QQ/squashfs-root
 APPDIR=${QQ_APP_DIR}
-LOAD=$(dirname $(readlink -f $0))/LiteLoader
+LOAD=$(dirname $(readlink -f $0))/LiteLoaderQQNT
 data=data
 CMD=$*
 QQdir=${CMD%% *}
@@ -51,23 +51,21 @@ chmod +x /tmp/QQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
  if [[ -d "${LOAD}" ]] {
- LiteLoader="--ro-bind $LOAD ${QQ_APP_DIR}/resources/app/LiteLoader \
-    --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data \
+ LiteLoader="--dev-bind $LOAD ${QQ_APP_DIR}/resources/app/LiteLoader \
     --dev-bind-try $LOAD/$data/plugins ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins \
     --dev-bind-try $LOAD/$data/plugins_data ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins_data \
     --dev-bind-try $LOAD/$data/config.json ${QQ_APP_DIR}/resources/app/LiteLoader/data/config.json \
     --ro-bind /etc/ssl /etc/ssl \
     --setenv LITELOADERQQNT_PROFILE ${QQ_APP_DIR}/resources/app/LiteLoader/data"
- sed -i 's|"main": "./app_launcher/index.js"|"main": "LiteLoader"|g' ${QQ_APP_DIR}/resources/app/package.json
+    grep -q $LOAD ${QQ_APP_DIR}/resources/app/app_launcher/index.js|| sed -i "1 i require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");" ${QQ_APP_DIR}/resources/app/app_launcher/index.js
     }
 #
 QQ_HOTUPDATE_DIR="${QQ_APP_DIR}/versions"
 mkdir ${QQ_HOTUPDATE_DIR}
 QQ_HOTUPDATE_VERSION="3.2.0-16449"
-QQ_PREVIOUS_VERSIONS=("2.0.1-429" "2.0.1-453" "2.0.2-510" "2.0.3-543" "3.0.0-565" "3.0.0-571" "3.1.0-9332" "3.1.0-9572" "3.1.1-11223" "3.1.2-12912" "3.1.2-13107" "3.2.0-16449" "3.2.0-16605" "3.2.0-16736" "3.2.1-16950" "3.2.1-17153" "3.2.1-17260" "3.2.1-17412" "3.2.1-17654" "3.2.1-17749" "3.2.1-17816" "3.2.2-18163")
+QQ_PREVIOUS_VERSIONS=("2.0.1-429" "2.0.1-453" "2.0.2-510" "2.0.3-543" "3.0.0-565" "3.0.0-571" "3.1.0-9332" "3.1.0-9572" "3.1.1-11223" "3.1.2-12912" "3.1.2-13107" "3.2.0-16449" "3.2.0-16605" "3.2.0-16736" "3.2.1-16950" "3.2.1-17153" "3.2.1-17260" "3.2.1-17412" "3.2.1-17654" "3.2.1-17749" "3.2.1-17816" "3.2.2-18163" "3.2.5-20979" "3.2.5-20811")
 cd ${QQ_HOTUPDATE_DIR}
 rm -rf "${QQ_HOTUPDATE_DIR}/${QQ_HOTUPDATE_VERSION}"
-wget "https://aur.archlinux.org/cgit/aur.git/plain/config.json?h=linuxqq-nt-bwrap" --output-document=config.json
 cd /tmp/QQ
 HOTUPDATE="--ro-bind $APPDIR/resources/app ${QQ_HOTUPDATE_DIR}/${QQ_HOTUPDATE_VERSION}"
 
@@ -82,17 +80,17 @@ USER_RUN_DIR="/run/user/$(id -u)"
 Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
     --symlink usr/lib /lib \
     --symlink usr/lib64 /lib64 \
-    --symlink usr/bin /bin \
     --ro-bind /usr /usr \
     --ro-bind /usr/bin/flatpak-xdg-open /usr/bin/xdg-open \
     --ro-bind /usr/bin/kdialog /usr/bin/kdialog  \
-    --ro-bind /usr/bin/bash /bin/sh \
-    --ro-bind /usr/bin/zsh /bin/zsh \
+    --ro-bind /usr/bin/bash /bin/bash \
+    --ro-bind /usr/bin/zsh /bin/sh \
     --ro-bind /etc/machine-id /etc/machine-id \
     --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
     --ro-bind-try /run/systemd/userdb /run/systemd/userdb \
     --ro-bind /etc/resolv.conf /etc/resolv.conf \
     --ro-bind /etc/localtime /etc/localtime \
+    --ro-bind /etc/vulkan /etc/vulkan \
     --ro-bind-try /etc/fonts /etc/fonts \
     --dev-bind /dev /dev \
     --ro-bind /sys /sys \
@@ -117,7 +115,8 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --setenv IBUS_USE_PORTAL 1 \
     --setenv APPDIR ${APPDIR} \
     ${LiteLoader} ${HOTUPDATE}  \
-    --ro-bind-try "${XAUTHORITY}" "${XAUTHORITY}" \
+    --ro-bind-try "${XAUTHORITY}" "${XAUTHORITY}"  \
     ${APPDIR}/AppRun ${CMD#* }"
+    #strace -y -o /tmp/logs/log
 bwrap `echo $Part`
 rm -rf /tmp/QQ
