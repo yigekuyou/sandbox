@@ -60,7 +60,7 @@ Config = `for file in ./data/*/config*.json
     done`
 popd
     LiteLoader="--dev-bind $LOAD ${QQ_APP_DIR}/resources/app/LiteLoader \
-    --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/date
+    --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/data
     --dev-bind $LOAD/$data/plugins ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins \
     $Config
     --dev-bind $LOAD/$data/config.json ${QQ_APP_DIR}/resources/app/LiteLoader/data/config.json \
