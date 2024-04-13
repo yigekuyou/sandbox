@@ -51,7 +51,7 @@ rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
  if [[ -d "${LOAD}" ]] {
 pushd $LOAD/$data
-Config = `for file in ./data/*/config*.json
+Config = `for file in ./data/*/*.json
     do
     if [ -f "$file" ]
     then
