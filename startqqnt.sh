@@ -40,7 +40,6 @@ if [[  ${QQdir##*\.} != AppImage ]] {
 echo "only name./AppImage"
 return -1
 }
-
 trap 'rm -rf /tmp/QQ ; return 0' INT TERM
 mkdir /tmp/QQ
 chmod 700 /tmp/QQ
@@ -51,9 +50,19 @@ chmod +x /tmp/QQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
  if [[ -d "${LOAD}" ]] {
- LiteLoader="--dev-bind $LOAD ${QQ_APP_DIR}/resources/app/LiteLoader \
+pushd $LOAD/$data
+Config = `for file in ./data/*/config*.json
+    do
+    if [ -f "$file" ]
+    then
+    echo "--dev-bind $LOAD/$data/$file ${QQ_APP_DIR}/resources/app/LiteLoader/data/$file \ "
+    fi
+    done`
+popd
+    LiteLoader="--dev-bind $LOAD ${QQ_APP_DIR}/resources/app/LiteLoader \
+    --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/date
     --dev-bind $LOAD/$data/plugins ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins \
-    --dev-bind $LOAD/$data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data \
+    $Config
     --dev-bind $LOAD/$data/config.json ${QQ_APP_DIR}/resources/app/LiteLoader/data/config.json \
     --ro-bind /etc/ssl /etc/ssl \
     --setenv LITELOADERQQNT_PROFILE ${QQ_APP_DIR}/resources/app/LiteLoader/data"
