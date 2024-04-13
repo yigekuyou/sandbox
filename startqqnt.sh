@@ -50,19 +50,20 @@ chmod +x /tmp/QQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
  if [[ -d "${LOAD}" ]] {
+mkdir ${QQ_APP_DIR}/resources/app/LiteLoader
 pushd $LOAD/$data
-Config = `for file in ./data/*/*.json
+for file in ./data/*/*
     do
     if [ -f "$file" ]
     then
-    echo "--dev-bind $LOAD/$data/$file ${QQ_APP_DIR}/resources/app/LiteLoader/data/$file \ "
+    Config="${Config} --dev-bind $LOAD/$data/$file ${QQ_APP_DIR}/resources/app/LiteLoader/data/$file"
     fi
-    done`
+    done
 popd
-    LiteLoader="--dev-bind $LOAD ${QQ_APP_DIR}/resources/app/LiteLoader \
-    --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/data
+    LiteLoader="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/LiteLoader/package.json \
+    --ro-bind $LOAD/src ${QQ_APP_DIR}/resources/app/LiteLoader/src \
     --dev-bind $LOAD/$data/plugins ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins \
-    $Config
+    $Config \
     --dev-bind $LOAD/$data/config.json ${QQ_APP_DIR}/resources/app/LiteLoader/data/config.json \
     --ro-bind /etc/ssl /etc/ssl \
     --setenv LITELOADERQQNT_PROFILE ${QQ_APP_DIR}/resources/app/LiteLoader/data"
