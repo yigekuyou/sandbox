@@ -47,6 +47,7 @@ cp $QQdir /tmp/QQ
 cd /tmp/QQ
 chmod +x /tmp/QQ/${QQdir##*\/}
 ./${QQdir##*\/} --appimage-extract > /dev/null
+rm /tmp/QQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
  if [[ -d "${LOAD}" ]] {
@@ -92,7 +93,7 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --symlink usr/lib64 /lib64 \
     --ro-bind /usr /usr \
     --ro-bind /usr/bin/flatpak-xdg-open /usr/bin/xdg-open \
-    --ro-bind /usr/bin/kdialog /usr/bin/kdialog  \
+    --ro-bind /usr/bin/kdialog /bin/kdialog  \
     --ro-bind /usr/bin/bash /bin/bash \
     --ro-bind /usr/bin/zsh /bin/sh \
     --ro-bind /etc/ld.so.cache /etc/ld.so.cache \

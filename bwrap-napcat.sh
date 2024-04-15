@@ -45,6 +45,7 @@ cp $QQdir /tmp/NCQQ
 cd /tmp/NCQQ
 chmod +x /tmp/NCQQ/${QQdir##*\/}
 ./${QQdir##*\/} --appimage-extract > /dev/null
+rm /tmp/QQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
 if [[ -d "${LOAD}" ]] {
