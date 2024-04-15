@@ -48,6 +48,10 @@ chmod +x /tmp/NCQQ/${QQdir##*\/}
 rm /tmp/NCQQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
+
+touch /tmp/NCQQ/log
+FIFO="/tmp/NCQQ/squashfs-root/resources/app/NapCat/qrcode.png"
+
 if [[ -d "${LOAD}" ]] {
 mkdir ${QQ_APP_DIR}/resources/app/NapCat
 NCqq="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/NapCat/package.json \
@@ -96,5 +100,6 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     ${NCqq} \
     ${APPDIR}/qq ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs ${CMD#* }"
     #strace -y -o /tmp/logs/log
-bwrap `echo $Part`
+(timeout 30 tail -f -n0 /tmp/NCQQ/log |grep -q "qrcode.png"  && xdg-open $FIFO && ) &
+bwrap `echo $Part` >/tmp/NCQQ/log
 rm -rf /tmp/NCQQ
