@@ -6,7 +6,7 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 QQ_APP_DIR=/tmp/NCQQ/squashfs-root
 APPDIR=${QQ_APP_DIR}
-LOAD=$(dirname $(readlink -f $0))/NapCat
+LOAD=$(realpath $(dirname $(readlink -f $0)) )
 CMD=$*
 QQdir=${CMD%% *}
 if [[ ${${CMD##* }##*\.} == AppImage ]] {
@@ -38,7 +38,7 @@ NCqq="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/NapCat/package.js
 --ro-bind $LOAD/napcat.cjs ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs"
 }
 USER_RUN_DIR="/run/user/$(id -u)"
-Part=" --new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
+Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
     --symlink usr/lib /lib \
     --symlink usr/lib64 /lib64 \
     --ro-bind /usr /usr \
@@ -63,7 +63,6 @@ Part=" --new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-c
     --tmpfs /dev/shm  \
     --ro-bind /usr/bin/kdialog /bin/kdialog  \
     --setenv ELECTRON_RUN_AS_NODE 1 \
-    --setenv XNLSPATH /usr/X11R6/lib/X11/nls \
     --setenv APPDIR ${APPDIR} \
     ${NCqq} \
      ${APPDIR}/qq  ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs ${CMD#* }"
