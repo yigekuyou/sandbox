@@ -50,15 +50,13 @@ chmod +x /tmp/QQ/${QQdir##*\/}
 rm /tmp/QQ/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
- if [[ -d "${LOAD}" ]] {
+if [[ -d "${LOAD}" ]] {
 mkdir ${QQ_APP_DIR}/resources/app/LiteLoader
 pushd $LOAD/$data
 for file in ./data/*/*
     do
     if [ -f "$file" ]
-    then
     Config="${Config} --dev-bind $LOAD/$data/$file ${QQ_APP_DIR}/resources/app/LiteLoader/data/$file"
-    fi
     done
 popd
     LiteLoader="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/LiteLoader/package.json \
@@ -70,7 +68,7 @@ popd
     --setenv LITELOADERQQNT_PROFILE ${QQ_APP_DIR}/resources/app/LiteLoader/data"
     grep -q $LOAD ${QQ_APP_DIR}/resources/app/app_launcher/index.js|| sed -i "1 i require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");" ${QQ_APP_DIR}/resources/app/app_launcher/index.js
     }
-Wayland="--enable-wayland-ime --ozone-platform-hint=auto"
+Wayland="--enable-wayland-ime --setenv --ozone-platform-hint=wayland  --enable-features=WaylandWindowDecorations"
 QQ_HOTUPDATE_DIR="${QQ_APP_DIR}/versions"
 mkdir ${QQ_HOTUPDATE_DIR}
 QQ_HOTUPDATE_VERSION="3.2.0-16449"
@@ -92,7 +90,7 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --symlink usr/lib /lib \
     --symlink usr/lib64 /lib64 \
     --ro-bind /usr /usr \
-    --ro-bind /usr/bin/flatpak-xdg-open /usr/bin/xdg-open \
+    --ro-bind /usr/bin/flatpak-xdg-open /bin/xdg-open \
     --ro-bind /usr/bin/kdialog /bin/kdialog  \
     --ro-bind /usr/bin/bash /bin/bash \
     --ro-bind /usr/bin/zsh /bin/sh \
@@ -122,10 +120,10 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --ro-bind-try "${FONTCONFIG_HOME}" "${FONTCONFIG_HOME}" \
     --tmpfs /dev/shm  \
     --ro-bind-try "${XDG_CONFIG_HOME}/gtk-3.0" "${XDG_CONFIG_HOME}/gtk-3.0" \
-    --setenv IBUS_USE_PORTAL 1 \
     --setenv APPDIR ${APPDIR} \
+    --setenv  PATH  /bin \
     ${LiteLoader} ${HOTUPDATE}  \
-     ${APPDIR}/AppRun ${CMD#* } --ignore-gpu-blocklist --enable-features=VaapiVideoDecodeLinuxGL --enable-features=WaylandWindowDecorations ${Wayland} --force-dark-mode --enable-features=WebUIDarkMode --enable-zero-copy"
+     ${APPDIR}/AppRun ${CMD#* } --ignore-gpu-blocklist ${Wayland}  --force-dark-mode --enable-features=WebUIDarkMode --enable-zero-copy"
     #strace -y -o /tmp/logs/log
 bwrap `echo $Part`
 rm -rf /tmp/QQ
