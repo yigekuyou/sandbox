@@ -61,8 +61,8 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --tmpfs ${HOME}/.config/QQ \
     --bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
     --tmpfs /dev/shm  \
-    --ro-bind /usr/bin/kdialog /bin/kdialog  \
     --setenv ELECTRON_RUN_AS_NODE 1 \
+    --setenv  PATH  /bin \
     --setenv APPDIR ${APPDIR} \
     ${NCqq} \
      ${APPDIR}/qq  ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs ${CMD#* }"
