@@ -65,8 +65,8 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
     --setenv  PATH  /bin \
     --setenv APPDIR ${APPDIR} \
     ${NCqq} \
-     ${APPDIR}/qq  ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs ${CMD#* }"
+    ${APPDIR}/qq  ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs ${CMD#* }"
     #strace -y -o /tmp/logs/log
-(timeout 30 tail -f -n0 /tmp/NCQQ/log |grep -q "qrcode.png"  && xdg-open $FIFO && ) &
-bwrap `echo $Part` >/tmp/NCQQ/log
+(timeout 30 tail -f -n0 /tmp/NCQQ/log |grep -q "qrcode.png"  && xdg-open $FIFO &&timeout 30 tail -f -n0 /tmp/NCQQ/log |grep -q "onQRCodeSessionFailed 1"&&pkill -P $$ ) &
+bwrap `echo $Part` &>/tmp/NCQQ/log
 rm -rf /tmp/NCQQ
