@@ -1,72 +1,103 @@
 #!/usr/bin/zsh
-
 USER_RUN_DIR="/run/user/$(id -u)"
 XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
-QQ_APP_DIR=/tmp/NCQQ/squashfs-root
+# 你猜猜看
+NCQQ=/tmp/NCQQ
+QQ_APP_DIR=${NCQQ}/squashfs-root
 APPDIR=${QQ_APP_DIR}
+napcatQQ=${QQ_APP_DIR}/resources/app/NapCat
+
+
+function command_exists() {
+	local command="$1"
+	command -v "${command}" >/dev/null 2>&1
+}
+
 LOAD=$(realpath $(dirname $(readlink -f $0)) )
 CMD=$*
 QQdir=${CMD%% *}
+# 获取登录图片的方法
+LOG=${NCQQ}/log
+
+# 暂存日志
+if  [[ ${DEBUG} ]] {
+DEBUGLOG=/tmp/logs/QQ-diagnostic
+if command_exists strace ;then
+DEBUGCMD="/usr/bin/strace -y -o ${DEBUGLOG}"
+fi
+LOG=/tmp/logs/QQ-log
+}
+
+
 if [[ ${${CMD##* }##*\.} == AppImage ]] {
-    unset CMD
-    }
+#	别动 不然启动后缀出现两次
+	unset CMD
+	}
+#	下面请随意
 if [[  ${QQdir##*\.} != AppImage ]] {
 echo "only name./AppImage"
 return -1
 }
-trap 'rm -rf /tmp/NCQQ ; return 0' INT TERM
-mkdir /tmp/NCQQ
-chmod 700 /tmp/NCQQ
-cp $QQdir /tmp/NCQQ
-cd /tmp/NCQQ
-chmod +x /tmp/NCQQ/${QQdir##*\/}
+# 你也不想没有clear env吧
+trap 'rm -rf ${NCQQ} ; return -1' INT TERM
+# 挂载哪些能保存登录信息而不受垃圾影响
+
+mkdir ${NCQQ}
+chmod 700 ${NCQQ}
+cp $QQdir ${NCQQ}
+cd ${NCQQ}
+chmod +x ${NCQQ}/${QQdir##*\/}
 ./${QQdir##*\/} --appimage-extract > /dev/null
-rm /tmp/NCQQ/${QQdir##*\/}
+rm ${NCQQ}/${QQdir##*\/}
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
 
-touch /tmp/NCQQ/log
-FIFO="/tmp/NCQQ/squashfs-root/resources/app/NapCat/qrcode.png"
-
 if [[ -d "${LOAD}" ]] {
-mkdir ${QQ_APP_DIR}/resources/app/NapCat
-NCqq="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/NapCat/package.json \
---ro-bind $LOAD/node_modules ${QQ_APP_DIR}/resources/app/NapCat/node_modules \
---dev-bind $LOAD/config ${QQ_APP_DIR}/resources/app/NapCat/config \
---ro-bind $LOAD/napcat.cjs ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs"
+touch ${LOG}
+FIFO="${napcatQQ}/qrcode.png"
+mkdir ${napcatQQ}
+NCqq="--ro-bind $LOAD/package.json ${napcatQQ}/package.json \
+--ro-bind $LOAD/node_modules ${napcatQQ}/node_modules \
+--dev-bind $LOAD/config ${napcatQQ}/config \
+--ro-bind $LOAD/napcat.cjs ${napcatQQ}/napcat.cjs"
 }
 USER_RUN_DIR="/run/user/$(id -u)"
+#	这是我的一小步
 Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
-    --symlink usr/lib /lib \
-    --symlink usr/lib64 /lib64 \
-    --ro-bind /usr /usr \
-    --ro-bind /usr/bin/ffprobe /bin/ffprobe  \
-    --ro-bind /usr/bin/zsh /bin/sh \
-    --dev-bind /dev /dev \
-    --ro-bind /sys /sys \
-    --ro-bind /etc/vulkan /etc/vulkan \
-    --ro-bind-try /etc/fonts /etc/fonts \
-    --ro-bind /etc/ld.so.cache /etc/ld.so.cache \
-    --ro-bind /etc/machine-id /etc/machine-id \
-    --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
-    --ro-bind /etc/passwd /etc/passwd \
-    --ro-bind-try /run/systemd/userdb /run/systemd/userdb \
-    --ro-bind /etc/resolv.conf /etc/resolv.conf \
-    --ro-bind /etc/localtime /etc/localtime \
-    --tmpfs /dev/shm  \
-    --proc /proc \
-    --dev-bind /tmp /tmp \
-    --tmpfs ${HOME}/.config/QQ \
-    --bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
-    --tmpfs /dev/shm  \
-    --setenv ELECTRON_RUN_AS_NODE 1 \
-    --setenv  PATH  /bin \
-    --setenv APPDIR ${APPDIR} \
-    ${NCqq} \
-    ${APPDIR}/qq  ${QQ_APP_DIR}/resources/app/NapCat/napcat.cjs ${CMD#* }"
-    #strace -y -o /tmp/logs/log
-(timeout 30 tail -f -n0 /tmp/NCQQ/log |grep -q "qrcode.png"  && xdg-open $FIFO &&timeout 30 tail -f -n0 /tmp/NCQQ/log |grep -q "onQRCodeSessionFailed 1"&&pkill -P $$ ) &
-bwrap `echo $Part` &>/tmp/NCQQ/log
-rm -rf /tmp/NCQQ
+	--symlink usr/lib /lib \
+	--symlink usr/lib64 /lib64 \
+	--ro-bind /usr /usr \
+	--ro-bind /usr/bin/ffprobe /bin/ffprobe  \
+	--ro-bind /usr/bin/zsh /bin/sh \
+	--dev-bind /dev /dev \
+	--ro-bind /sys /sys \
+	--ro-bind /etc/vulkan /etc/vulkan \
+	--ro-bind-try /etc/fonts /etc/fonts \
+	--ro-bind /etc/ld.so.cache /etc/ld.so.cache \
+	--ro-bind /etc/machine-id /etc/machine-id \
+	--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
+	--ro-bind /etc/passwd /etc/passwd \
+	--ro-bind-try /run/systemd/userdb /run/systemd/userdb \
+	--ro-bind /etc/resolv.conf /etc/resolv.conf \
+	--ro-bind /etc/localtime /etc/localtime \
+	--tmpfs /dev/shm  \
+	--proc /proc \
+	--dev-bind /tmp /tmp \
+	--tmpfs ${HOME}/.config/QQ \
+	--bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
+	--tmpfs /dev/shm  \
+	--setenv ELECTRON_RUN_AS_NODE 1 \
+	--setenv  PATH  /bin \
+	--setenv APPDIR ${APPDIR} \
+	${NCqq} \
+	${DEBUGCMD} ${APPDIR}/qq  ${napcatQQ}/napcat.cjs ${CMD#* }"
+	#子进程监听任务
+(timeout 30 tail -f -n0 ${LOG} |grep -q "qrcode.png"  && xdg-open $FIFO &&timeout 120 tail -f -n0 ${LOG} |grep -q "onQRCodeSessionFailed 1"&&pkill -9 -P $$ ) &
+
+# 主进程
+(bwrap `echo $Part` &>${LOG}) &
+tail -f -n0 ${LOG} |grep -q "FATAL ERROR"&&pkill -9 -P $$
+rm -rf  ${NCQQ}
+return 0
