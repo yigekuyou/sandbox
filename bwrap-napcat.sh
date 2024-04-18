@@ -4,6 +4,9 @@ XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 # 你猜猜看
+LOAD=$(realpath $(dirname $(readlink -f $0)) )
+CMD=$*
+QQdir=${CMD%% *}
 NCQQ=/tmp/NCQQ
 QQ_APP_DIR=${NCQQ}/squashfs-root
 APPDIR=${QQ_APP_DIR}
@@ -39,9 +42,6 @@ function command_exists() {
 	command -v "${command}" >/dev/null 2>&1
 }
 
-LOAD=$(realpath $(dirname $(readlink -f $0)) )
-CMD=$*
-QQdir=${CMD%% *}
 # 获取登录图片的方法
 LOG=${NCQQ}/${QQ}/QQ/QQ${QQ}.log
 
