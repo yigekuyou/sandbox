@@ -12,14 +12,15 @@ QQ_APP_DIR=${NCQQ}/squashfs-root
 APPDIR=${QQ_APP_DIR}
 napcatQQ=${QQ_APP_DIR}/resources/app/NapCat${QQ}
 
-# 环境问题
-if [[ ! -d "${NCQQ}" ]] {
-# 从一大串arg提取key
 keyname=AppImage
 	if [[ ${${CMD##* }##*\.} == ${keyname} ]] {
 	#别动 不然启动后缀出现两次
 	unset CMD
 	}
+
+# 环境问题
+if [[ ! -d "${NCQQ}" ]] {
+# 从一大串arg提取key
 	#下面请随意
 	if [[  ${QQdir##*\.} != ${keyname} ]] {
 	echo "only name./AppImage"

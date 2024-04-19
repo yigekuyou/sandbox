@@ -33,17 +33,17 @@ if [[ ! -d ${LOGIN} ]] {
 mkdir -p  ${LOGIN}
 chmod 700 ${LOGIN}
 }
-
-
-if [[ ! -d "${QQ_APP_DIR}" ]] {
-# 从一大串arg提取key
 keyname=AppImage
 
 
 	if [[ ${${CMD##* }##*\.} == ${keyname} ]] {
 	#别动 不然启动后缀出现两次
 	unset CMD
-	}
+
+
+if [[ ! -d "${QQ_APP_DIR}" ]] {
+# 从一大串arg提取key
+
 	#下面请随意
 	if [[  ${QQdir##*\.} != ${keyname} ]] {
 	echo "only name./AppImage"
