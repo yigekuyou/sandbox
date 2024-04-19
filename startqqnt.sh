@@ -58,7 +58,6 @@ keyname=AppImage
 	rm ${QQ_APP_ROOTDIR}/${QQdir##*\/}
 
 	rm -rf ${QQ_APP_DIR}/resources/app/fonts
-	rm -rf ${QQ_APP_DIR}/{usr/lib,libEGL.so,libGLESv2.so,libvk_swiftshader.so,libvulkan.so.*}
 	rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
 	mkdir ${QQ_HOTUPDATE_DIR}
 }
@@ -131,6 +130,7 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
 	--ro-bind /etc/resolv.conf /etc/resolv.conf \
 	--ro-bind /etc/localtime /etc/localtime \
 	--dev-bind ${LOGIN} ${HOME}/.config/QQ \
+	--tmpfs ${HOME}/.config/QQ/crash_files \
 	--proc /proc \
 	--dev-bind /run/dbus /run/dbus \
 	--ro-bind-try /etc/fonts /etc/fonts \
@@ -147,4 +147,3 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
 	${APPDIR}/qq ${CMD#* } --ignore-gpu-blocklist ${Wayland}  --force-dark-mode --enable-features=WebUIDarkMode --enable-zero-copy"
 	#strace -y -o /tmp/logs/log
 bwrap `echo $Part`
-rm -rf /tmp/QQ
