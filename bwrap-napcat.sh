@@ -25,7 +25,7 @@ keyname=AppImage
 	echo "only name./AppImage"
 	return -1
 	}
-trap 'rm -rf ${NCQQ} ;return -1' INT
+trap "rm -rf ${NCQQ} ;return -1" INT
 mkdir ${NCQQ}
 chmod 700 ${NCQQ}
 cp $QQdir ${NCQQ}
@@ -49,9 +49,20 @@ LOG=${NCQQ}/${QQ}/QQ/QQ${QQ}.log
 if [[ ${QQ} ]] {
 QQlogin="-q ${QQ}"
 [[ ! -e ${LOAD}/config/onebot11_${QQ} ]] && cp ${LOAD}/config/onebot11.json ${LOAD}/config/onebot11_${QQ}.json
+
+# 挂载login垃圾时刻
+LOGIN=${NCQQ}/${QQ}/QQ
+if [[ ! -d ${LOGIN} ]] {
+mkdir -p ${LOGIN}
+}
+msfConfig="--dev-bind ${LOGIN} ${HOME}/.config/QQ"
+
+
 # 	debug喽
 	grep '"debug": ture' ${LOAD}/config/onebot11_${QQ}.json &&DEBUG=1
-	QQconfig="--dev-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json"
+	QQconfig="--dev-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json \
+	 ${msfConfig} \
+	"
 	trap "rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files ; return -1"  TERM HUP INT
 } else { QQconfig="--dev-bind ${LOAD}/config ${napcatQQ}/config"
 trap "rm -rf ${napcatQQ} ${NCQQ}/QQ ; return -1"  TERM HUP INT
@@ -65,7 +76,6 @@ fi
 LOG=/tmp/logs/QQ${QQ}.log
 }
 # 初始化
-mkdir -p ${NCQQ}/${QQ}/QQ
 touch ${LOG}
 
 
@@ -103,9 +113,7 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
 	--ro-bind /etc/localtime /etc/localtime \
 	--tmpfs /dev/shm  \
 	--proc /proc \
-	--tmpfs ${HOME}/.config \
 	--dev-bind /tmp /tmp \
-	--dev-bind ${NCQQ}/${QQ}/QQ ${HOME}/.config/QQ \
 	--bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
 	--tmpfs /dev/shm  \
 	--setenv ELECTRON_RUN_AS_NODE 1 \
