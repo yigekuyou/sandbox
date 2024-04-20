@@ -100,6 +100,7 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
 	--symlink usr/lib64 /lib64 \
 	--ro-bind /usr /usr \
 	--ro-bind /usr/bin/ffprobe /bin/ffprobe  \
+	--ro-bind /usr/bin/ffmpeg /bin/ffmpeg  \
 	--ro-bind /usr/bin/zsh /bin/sh \
 	--dev-bind /dev /dev \
 	--ro-bind /sys /sys \
