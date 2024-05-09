@@ -53,19 +53,20 @@ LOG=${NCQQ}/${QQ}/QQ/QQ${QQ}.log
 # 别扫码了
 if [[ ${QQ} ]] {
 QQlogin="-q ${QQ}"
-[[ ! -e ${LOAD}/config/onebot11_${QQ} ]] && cp ${LOAD}/config/onebot11.json ${LOAD}/config/onebot11_${QQ}.json
+[[ ! -e ${LOAD}/config/onebot11_${QQ}.json ]] && cp ${LOAD}/config/onebot11.json ${LOAD}/config/onebot11_${QQ}.json
 
 # 挂载login垃圾时刻
 LOGIN=${NCQQ}/${QQ}/QQ
 if [[ ! -d ${LOGIN} ]] {
 mkdir -p ${LOGIN}
 }
-msfConfig="--dev-bind ${LOGIN} ${HOME}/.config/QQ"
+msfConfig="--dev-bind ${LOGIN} ${HOME}/.config/QQ --ro-bind ${LOAD}/config/napcat.json ${napcatQQ}/config/napcat.json  "
 
 
 # 	debug喽
-	grep '"debug": ture' ${LOAD}/config/onebot11_${QQ}.json &&DEBUG=1
-	QQconfig="--dev-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json \
+	 grep \"consoleLogLevel\"\:\ \"debug\" ${LOAD}/config/napcat.json &&DEBUG=1
+
+	QQconfig="--ro-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json \
 	 ${msfConfig} \
 	"
 	trap "rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files ; return -1"  TERM HUP INT
