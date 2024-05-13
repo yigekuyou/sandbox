@@ -134,7 +134,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind /usr/lib /usr/lib \
 	--ro-bind /usr/lib64 /usr/lib64 \
 	--ro-bind /usr/bin /usr/bin \
-	--ro-bind /usr/bin/flatpak-xdg-open /usr/bin/flatpak-xdg-open \
+	--ro-bind /usr/bin/flatpak-xdg-open /usr/bin/xdg-open \
 	--ro-bind ${QQ_APP_DIR}/flatpak-info "/.flatpak-info" \
 	--ro-bind /usr/share /usr/share \
 	--ro-bind /usr/bin/bash /bin/bash \
@@ -145,9 +145,8 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--hostname lighthomo \
 	--ro-bind /etc/localtime /etc/localtime \
 	--ro-bind /etc/vulkan /etc/vulkan \
-	--dev-bind /dev/dri /dev/dri \
+	--dev-bind /dev/ /dev/ \
 	--ro-bind-try /etc/fonts /etc/fonts \
-	--dev /dev \
 	--ro-bind /sys/dev/char /sys/dev/char \
 	--ro-bind /sys/devices /sys/devices \
 	--ro-bind /sys /sys \
