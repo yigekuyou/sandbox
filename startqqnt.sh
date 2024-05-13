@@ -121,9 +121,12 @@ Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland  --enable-features=
 	--talk=org.freedesktop.DBus.GetNameOwner \
 	--talk=org.freedesktop.Notifications \
 	--talk=org.kde.StatusNotifierWatcher \
-	--talk=StatusNotifierItem \
 	--talk=org.freedesktop.DBus.NameAcquired \
-	--talk=org.gtk.vfs.Daemon
+	--talk=org.gtk.vfs.Daemon \
+	--talk=org.freedesktop.portal.Documents \
+	--talk=org.freedesktop.portal.Flatpak \
+	--talk=org.freedesktop.portal.Desktop \
+	--talk=org.freedesktop.portal.FileChooser \
 
 }
 xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
@@ -144,6 +147,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--hostname lighthomo \
 	--ro-bind /etc/localtime /etc/localtime \
 	--ro-bind /etc/vulkan /etc/vulkan \
+	--dev-bind /dev/dri /dev/dri \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--dev /dev \
 	--ro-bind /sys/dev/char /sys/dev/char \
