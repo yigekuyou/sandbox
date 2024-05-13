@@ -98,34 +98,17 @@ echo 提醒需要把启动脚本放入napcat的根目录 \n
 [[ -e ${LOAD}/README.md ]]&&echo "还是说没有node_modules？ \n 帮你打开看看" &&xdg-open ${LOAD}/README.md
 return -1
 }
-	set_up_dbus_proxy() {
-	bwrap \
-	--new-session \
-	--symlink /usr/lib64 /lib64 \
-	--ro-bind /usr/lib /usr/lib \
-	--ro-bind /usr/lib64 /usr/lib64 \
-	--ro-bind /usr/bin /usr/bin \
-	--bind "$XDG_RUNTIME_DIR" "$XDG_RUNTIME_DIR" \
-	--ro-bind ${QQ_APP_DIR}/flatpak-info "/.flatpak-info" \
-	--die-with-parent \
-	-- \
-	env -i xdg-dbus-proxy \
-	"$DBUS_SESSION_BUS_ADDRESS" \
-	"$APP_FOLDER/bus" \
-	--filter \
-	--log \
-	--own=$APP_NAME \
-}
+
 #	这是我的一小步
-Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cgroup-try --die-with-parent \
+Part="--unshare-all --share-net --new-session --die-with-parent \
 	--symlink usr/lib /lib \
 	--symlink usr/lib64 /lib64 \
 	--ro-bind /usr /usr \
 	--ro-bind /usr/bin/ffprobe /bin/ffprobe  \
 	--ro-bind /usr/bin/ffmpeg /bin/ffmpeg  \
-	--ro-bind /usr/bin/zsh /bin/sh \
-	--dev-bind /dev /dev \
+	--ro-bind /usr/bin/bash /bin/sh \
 	--ro-bind /sys /sys \
+	--dev-bind /dev /dev \
 	--ro-bind /etc/vulkan /etc/vulkan \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--ro-bind /etc/ld.so.cache /etc/ld.so.cache \
@@ -136,20 +119,18 @@ Part="--new-session --cap-drop ALL --unshare-user-try --unshare-pid --unshare-cg
 	--ro-bind /etc/resolv.conf /etc/resolv.conf \
 	--ro-bind /etc/localtime /etc/localtime \
 	--ro-bind ${QQ_APP_DIR}/flatpak-info "/.flatpak-info" \
-	--dev-bind "${APP_FOLDER}" "${XDG_RUNTIME_DIR}" \
 	--tmpfs /dev/shm  \
 	--proc /proc \
 	--dev-bind /tmp /tmp \
 	--bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
 	--tmpfs /dev/shm  \
-	--setenv  XDG_RUNTIME_DIR   $APP_FOLDER \
 	--setenv ELECTRON_RUN_AS_NODE 1 \
 	--setenv  PATH  /bin \
 	--setenv APPDIR ${APPDIR} \
 	${NCqq} \
-	${DEBUGCMD} ${APPDIR}/qq  ${napcatQQ}/napcat.cjs ${QQlogin} ${CMD#* }"
+	-- sh -c \" echo \$\$ > ${HOME}/.config/QQ/pid && ${DEBUGCMD} ${APPDIR}/qq  ${napcatQQ}/napcat.cjs ${QQlogin} ${CMD#* } \"  "
 	#子进程监听任务
-set_up_dbus_proxy &
+# set_up_dbus_proxy &
 (timeout 30 tail -f -n0 ${LOG} |grep -q "qrcode.png"  && xdg-open $FIFO &&timeout 120 tail -f -n0 ${LOG} |grep -q "onQRCodeSessionFailed 1"&&pkill -15 -P $$ ) &
 # 主进程
-bwrap `echo $Part` &>${LOG} ;pkill -TERM -P $$
+echo $Part|xargs bwrap  &>${LOG} ;pkill -TERM -P $$
