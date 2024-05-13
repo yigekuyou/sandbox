@@ -97,7 +97,7 @@ if [[ -d "${LOAD}" ]] {
 	grep -q LiteLoader ${QQ_APP_DIR}/resources/app/app_launcher/index.js|| sed -i "1 i require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");"  ${QQ_APP_DIR}/resources/app/app_launcher/index.js
 } else { grep -q LiteLoader ${QQ_APP_DIR}/resources/app/app_launcher/index.js&&sed -i "1d"  ${QQ_APP_DIR}/resources/app/app_launcher/index.js }
 
-Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland  --enable-features=WaylandWindowDecorations"
+Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland --enable-features=WaylandWindowDecorations"
 
 	set_up_dbus_proxy() {
 	bwrap \
@@ -123,10 +123,8 @@ Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland  --enable-features=
 	--talk=org.kde.StatusNotifierWatcher \
 	--talk=org.freedesktop.DBus.NameAcquired \
 	--talk=org.gtk.vfs.Daemon \
-	--talk=org.freedesktop.portal.Documents \
-	--talk=org.freedesktop.portal.Flatpak \
-	--talk=org.freedesktop.portal.Desktop \
 	--talk=org.freedesktop.portal.FileChooser \
+	--talk=org.freedesktop.portal.OpenURI.OpenFile \
 
 }
 xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
@@ -136,7 +134,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind /usr/lib /usr/lib \
 	--ro-bind /usr/lib64 /usr/lib64 \
 	--ro-bind /usr/bin /usr/bin \
-	--ro-bind /usr/bin/flatpak-xdg-open /bin/xdg-open \
+	--ro-bind /usr/bin/flatpak-xdg-open /usr/bin/flatpak-xdg-open \
 	--ro-bind ${QQ_APP_DIR}/flatpak-info "/.flatpak-info" \
 	--ro-bind /usr/share /usr/share \
 	--ro-bind /usr/bin/bash /bin/bash \
