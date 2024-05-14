@@ -114,7 +114,6 @@ Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland --enable-features=W
 	"$DBUS_SESSION_BUS_ADDRESS" \
 	"$APP_FOLDER/bus" \
 	--filter \
-	--log \
 	--own=$APP_NAME \
 	--talk=org.freedesktop.portal.Notification.AddNotification \
 	--talk=org.kde.StatusNotifierItem \
@@ -123,10 +122,10 @@ Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland --enable-features=W
 	--talk=org.kde.StatusNotifierWatcher \
 	--talk=org.freedesktop.DBus.NameAcquired \
 	--talk=org.gtk.vfs.Daemon \
-	--talk=org.freedesktop.portal.FileChooser \
-	--talk=org.freedesktop.portal.OpenURI.OpenFile \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenFile \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenURI  \
 
-}
+	}
 xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
 Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--symlink usr/lib /lib \
@@ -142,8 +141,8 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind /etc/machine-id /etc/machine-id \
 	--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
 	--ro-bind-try /run/systemd/userdb /run/systemd/userdb \
-	--hostname lighthomo \
 	--ro-bind /etc/localtime /etc/localtime \
+	--ro-bind /etc/resolv.conf /etc/resolv.conf \
 	--ro-bind /etc/vulkan /etc/vulkan \
 	--dev-bind /dev/ /dev/ \
 	--ro-bind-try /etc/fonts /etc/fonts \
