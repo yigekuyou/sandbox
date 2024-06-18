@@ -38,8 +38,8 @@ if [[ ! -d "${QQ_APP_DIR}" ]] {
 	echo "only name./AppImage"
 	return -1
 	}
-
 	trap "rm -rf ${QQ_APP_DIR} ${APP_FOLDER} ;return -1"INT
+	mkdir -p ${APP_FOLDER}
 	cp $QQdir ${QQ_APP_ROOTDIR}
 	cd ${QQ_APP_ROOTDIR}
 	chmod +x ${QQ_APP_ROOTDIR}/${QQdir##*\/}
@@ -49,7 +49,6 @@ if [[ ! -d "${QQ_APP_DIR}" ]] {
 	rm -rf ${QQ_APP_DIR}/resources/app/fonts
 	rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp.so.42}
 	rm -rf ${QQ_APP_DIR}/{usr/lib,libvulkan.so.1,libvk_swiftshader.so}
-	mkdir -p "$APP_FOLDER"
 	echo "[Application]
 name=$APP_NAME" > ${QQ_APP_DIR}/flatpak-info
 
@@ -124,7 +123,13 @@ Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland --enable-features=W
 	--talk=org.gtk.vfs.Daemon \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenFile \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenURI  \
-
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.OpenPipeWireRemote \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Request.Response \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.CreateSession \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.Start \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.SelectSources \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Session.Close
+# 	--log &> /tmp/logs/dbus
 	}
 xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
 Part="--new-session --unshare-all --share-net  --die-with-parent \
@@ -159,7 +164,6 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--dev-bind /tmp /tmp \
 	--dev-bind "$APP_FOLDER" "${XDG_RUNTIME_DIR}" \
-	--ro-bind "${XDG_RUNTIME_DIR}/dconf" "${XDG_RUNTIME_DIR}/dconf" \
 	--ro-bind-try "${XDG_CONFIG_HOME}/dconf" "${XDG_CONFIG_HOME}/dconf" \
 	--ro-bind "${xauth}" "${xauth}" \
 	--ro-bind "$XDG_RUNTIME_DIR/pipewire-0" "$XDG_RUNTIME_DIR/pipewire-0" \
