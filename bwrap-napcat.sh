@@ -20,7 +20,7 @@ keyname=AppImage
 	}
 
 # 环境问题
-if [[ ! -d "${NCQQ}" ]] {
+if [[ ! -d "${QQ_APP_DIR}" ]] {
 # 从一大串arg提取key
 	#下面请随意
 	if [[  ${QQdir##*\.} != ${keyname} ]] {
@@ -28,7 +28,7 @@ if [[ ! -d "${NCQQ}" ]] {
 	return -1
 	}
 trap "rm -rf ${NCQQ} $APP_FOLDE ;return -1" INT
-mkdir ${NCQQ}
+mkdir -p ${QQ_APP_DIR}
 chmod 700 ${NCQQ}
 cp $QQdir ${NCQQ}
 cd ${NCQQ}
@@ -42,6 +42,10 @@ rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp
 	echo "[Application]
 name=$APP_NAME" > ${QQ_APP_DIR}/flatpak-info
 }
+	echo "const path = require('path');
+    (async () => {
+        await import(\"file://\" + path.join('${napcatQQ}/napcat.mjs'));
+    })();" >${QQ_APP_DIR}/resources/app/app_launcher/index.js
 function command_exists() {
 	local command="$1"
 	command -v "${command}" >/dev/null 2>&1
@@ -92,7 +96,7 @@ mkdir ${napcatQQ}
 NCqq="--ro-bind $LOAD/package.json ${napcatQQ}/package.json \
 ${QQconfig} \
 --ro-bind $LOAD/node_modules ${napcatQQ}/node_modules \
---ro-bind $LOAD/napcat.cjs ${napcatQQ}/napcat.cjs"
+--ro-bind $LOAD/napcat.mjs ${napcatQQ}/napcat.mjs"
 } else {
 echo 提醒需要把启动脚本放入napcat的根目录 \n
 [[ -e ${LOAD}/README.md ]]&&echo "还是说没有node_modules？ \n 帮你打开看看" &&xdg-open ${LOAD}/README.md
@@ -119,16 +123,17 @@ Part="--unshare-all --share-net --new-session --die-with-parent \
 	--ro-bind /etc/resolv.conf /etc/resolv.conf \
 	--ro-bind /etc/localtime /etc/localtime \
 	--ro-bind ${QQ_APP_DIR}/flatpak-info "/.flatpak-info" \
+	--ro-bind ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY} ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY} \
 	--tmpfs /dev/shm  \
 	--proc /proc \
 	--dev-bind /tmp /tmp \
 	--bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
 	--tmpfs /dev/shm  \
-	--setenv ELECTRON_RUN_AS_NODE 1 \
 	--setenv  PATH  /bin \
+	--setenv ELECTRON_OZONE_PLATFORM_HINT auto \
 	--setenv APPDIR ${APPDIR} \
 	${NCqq} \
-	-- sh -c \" echo \$\$ > ${HOME}/.config/QQ/pid && ${DEBUGCMD} ${APPDIR}/qq  ${napcatQQ}/napcat.cjs ${QQlogin} ${CMD#* } \"  "
+	-- sh -c \" echo \$\$ > ${HOME}/.config/QQ/pid && ${DEBUGCMD} ${APPDIR}/qq  ${QQlogin} ${CMD#* } \"  "
 	#子进程监听任务
 # set_up_dbus_proxy &
 (timeout 30 tail -f -n0 ${LOG} |grep -q "qrcode.png"  && xdg-open $FIFO &&timeout 120 tail -f -n0 ${LOG} |grep -q "onQRCodeSessionFailed 1"&&pkill -15 -P $$ ) &
