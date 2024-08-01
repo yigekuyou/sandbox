@@ -65,15 +65,16 @@ function command_exists() {
 }
 
 if [[ -d "${LOAD}" ]] {
-	Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data"
+	{ Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
 	if [[ -f $LOAD/data/data/LiteLoader/config.json  ]] {
 		pushd $LOAD/data/data
 		for dir in ./*
 			do
-			if [[ -d "$dir" ]] {
+			if [[ -d "$dir/*" ]] {
 				for file in ./$dir/*
 					do
 					if [[ -f "$file" ]] {
+						Config="${Config} --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/data/$dir"
 						Config="${Config} --dev-bind $LOAD/data/data/$file ${QQ_APP_DIR}/resources/app/LiteLoader/data/data/$file"
 					} else
 					{
@@ -85,7 +86,7 @@ if [[ -d "${LOAD}" ]] {
 			}
 			done
 		popd
-	}
+	} else { Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
 	LiteLoader="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/LiteLoader/package.json \
 	--ro-bind $LOAD/src ${QQ_APP_DIR}/resources/app/LiteLoader/src \
 	--dev-bind $LOAD/data/plugins ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins \
@@ -96,7 +97,7 @@ if [[ -d "${LOAD}" ]] {
 	grep -q LiteLoader ${QQ_APP_DIR}/resources/app/app_launcher/index.js|| sed -i "1 i require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");"  ${QQ_APP_DIR}/resources/app/app_launcher/index.js
 } else { grep -q LiteLoader ${QQ_APP_DIR}/resources/app/app_launcher/index.js&&sed -i "1d"  ${QQ_APP_DIR}/resources/app/app_launcher/index.js }
 
-Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland --enable-features=WaylandWindowDecorations"
+Wayland="--enable-wayland-ime  --enable-features=WebRTCPipeWireCapturer"
 
 	set_up_dbus_proxy() {
 	bwrap \
@@ -128,8 +129,8 @@ Wayland="--enable-wayland-ime  --ozone-platform-hint=wayland --enable-features=W
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.CreateSession \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.Start \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.SelectSources \
-	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Session.Close
-# 	--log &> /tmp/logs/dbus
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Session.Close \
+#  	--log &> /tmp/logs/dbus
 	}
 xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
 Part="--new-session --unshare-all --share-net  --die-with-parent \
@@ -175,6 +176,8 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--tmpfs /dev/shm  \
 	--ro-bind-try "${XDG_CONFIG_HOME}/gtk-3.0" "${XDG_CONFIG_HOME}/gtk-3.0" \
 	--setenv NO_AT_BRIDGE 1 \
+	--setenv WEBKIT_DISABLE_COMPOSITING_MODE 1 \
+	--setenv ELECTRON_OZONE_PLATFORM_HINT auto \
 	--setenv APPDIR ${APPDIR} \
 	${LiteLoader} ${HOTUPDATE}   \
 	${APPDIR}/qq ${CMD#* } --ignore-gpu-blocklist ${Wayland}  --force-dark-mode --enable-features=WebUIDarkMode --enable-zero-copy ${APPDIR}/resources/app"
