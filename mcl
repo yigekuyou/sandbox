@@ -1,91 +1,72 @@
 #!/usr/bin/zsh
-cd $(dirname $(readlink -f $0))
 LOAD=$(dirname $(readlink -f $0))
+setopt no_nomatch
 HOME=/var/mcl
-Config="--dev-bind-try $LOAD/libs/ $HOME/libs/ \
---dev-bind-try $LOAD/modules/ $HOME/modules/ \
---dev-bind-try $LOAD/plugin-libraries/ $HOME/plugin-libraries/ \
---dev-bind-try $LOAD/plugin-shared-libraries/ $HOME/plugin-shared-libraries/ \
---dev-bind-try $LOAD/plugins/ $HOME/plugins/ \
---dev-bind-try $LOAD/mcl.jar $HOME/mcl.jar \
---dev-bind-try $LOAD/config.json $HOME/config.json \
---dev-bind-try $LOAD/overflow.json $HOME/overflow.json \
-"
-if [[ -d "${LOAD}/data" ]] {
-	{ Config="${Config} --dev-bind $LOAD/data/ $HOME/data/" }
-	pushd $LOAD/data/
+	for sdir in data
+	do
+	if [[ -d "${LOAD}/${sdir}" ]] {
+	{ Config="${Config} --dev-bind $LOAD/${sdir}/ $HOME/${sdir}/" }
+	pushd $LOAD/${sdir}/
 	for dir in ./*
 		do
-		if [[ -d "$dir/*" ]] {
 			for file in ./$dir/*
 				do
-				Config="${Config} --tmpfs  $HOME/data//$dir"
+				Config="${Config} --tmpfs  $HOME/${sdir}/$dir"
 				if [[ -f "$file" ]] {
-					Config="${Config} --dev-bind $LOAD/data/$file  $HOME/data/$file"
+					Config="${Config} --dev-bind $LOAD/${sdir}/$file  $HOME/${sdir}/$file"
 				} else
 				{
 					if [[ -d "$file" ]] {
-					Config="${Config} --ro-bind $LOAD/data/$file  $HOME/data/$file"
+					Config="${Config} --dev-bind $LOAD/${sdir}/$file  $HOME/${sdir}/$file"
 					}
 				}
 				done
-			}
 		done
 	popd
 }
-if [[ -d "${LOAD}/config" ]] {
-	{ Config="${Config} --dev-bind ${LOAD}/config $HOME/config/" }
-	pushd ${LOAD}/config
-	for dir in ./*
-		do
-		if [[ -d "$dir/*" ]] {
-			for file in ./$dir/*
-				do
-				Config="${Config} --tmpfs  $HOME/config/$dir"
-				if [[ -f "$file" ]] {
-					Config="${Config} --dev-bind $LOAD/config/$file  $HOME/config/$file"
-				} else
-				{
-					if [[ -d "$file" ]] {
-					Config="${Config} --ro-bind $LOAD/config/$file  $HOME/config/$file"
-					}
-				}
-				done
-			}
-		done
-	popd
-}
-Part=" --tmpfs / --tmpfs /run --dir /tmp --dev /dev --proc /proc \
-	--new-session 	--clearenv --unshare-all --share-net  --die-with-parent \
+	done
+Part="--dev /dev --proc /proc \
+	--new-session --clearenv --unshare-all --share-net  --die-with-parent \
 	--symlink usr/lib /lib \
 	--symlink usr/lib64 /lib64 \
 	--ro-bind /usr/lib /usr/lib \
 	--ro-bind /usr/lib64 /usr/lib64 \
-	--ro-bind /usr/bin /usr/bin \
-	--symlink usr/bin /bin \
+	--ro-bind /usr/bin/ffprobe /bin/ffprobe  \
+	--ro-bind /usr/bin/ffmpeg /bin/ffmpeg  \
+	--ro-bind /usr/bin/bash /bin/zsh \
+	--ro-bind /usr/share/ /usr/share/ \
 	--ro-bind-try /var/lib/ca-certificates /var/lib/ca-certificates \
 	--ro-bind /etc/machine-id /etc/machine-id \
 	--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
 	--ro-bind /etc/resolv.conf /etc/resolv.conf \
 	--ro-bind /etc/vulkan /etc/vulkan \
 	--ro-bind-try /etc/fonts /etc/fonts \
+	--ro-bind-try /var/cache/fontconfig/ /var/cache/fontconfig/ \
 	--ro-bind-try /etc/ld.so.cache /etc/ld.so.cache \
 	--ro-bind /etc/ld.so.conf /etc/ld.so.conf \
 	--ro-bind /etc/ca-certificates /etc/ca-certificates \
 	--ro-bind /etc/localtime /etc/localtime \
 	--ro-bind /etc/pki /etc/pki \
-	--ro-bind /sys/dev/char /sys/dev/char \
-	--ro-bind /sys/devices /sys/devices \
-	--ro-bind /sys /sys \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--dev-bind /tmp /tmp \
+	--dev-bind /tmp $HOME/temp \
 	--tmpfs /dev/shm  \
 	--setenv HOME $HOME \
+	--setenv PWD $HOME \
 	--setenv LANG zh_CN.UTF-8 \
 	--setenv PATH /usr/local/bin:/usr/bin:/bin \
 	--setenv USER mcl \
+	--dev-bind-try $LOAD/config/ $HOME/config/ \
+	--dev-bind-try $LOAD/libs/ $HOME/libs/ \
+	--dev-bind-try $LOAD/modules/ $HOME/modules/ \
+	--dev-bind-try $LOAD/plugin-libraries/ $HOME/plugin-libraries/ \
+	--dev-bind-try $LOAD/plugin-shared-libraries/ $HOME/plugin-shared-libraries/ \
+	--dev-bind-try $LOAD/plugins/ $HOME/plugins/ \
+	--dev-bind-try $LOAD/mcl.jar $HOME/mcl.jar \
+	--dev-bind-try $LOAD/config.json $HOME/config.json \
+	--dev-bind-try $LOAD/overflow.json $HOME/overflow.json\
 	${Config} \
--- $JRE_HOME/bin/java -Duser.timezone=GMT+8 -D=mirai.no-desktop -Dmcl.disable-ansi=true -jar mcl.jar -u $*
+-- zsh -c \"cd $HOME && $JRE_HOME/bin/java -Dmirai.console.skip-end-user-readme -D=mirai.no-desktop -Dmcl.disable-ansi=true -jar mcl.jar -u $* \"
 "
 echo $Part|xargs bwrap
 #  $JRE_HOME/bin/java -D=mirai.no-desktop -Dmcl.disable-ansi=true -jar mcl.jar -u $*
