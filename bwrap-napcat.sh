@@ -54,7 +54,13 @@ LOG=${NCQQ}/${QQ}/QQ/QQ${QQ}.log
 if [[ ${QQ} ]] {
 QQlogin="-q ${QQ}"
 [[ ! -e ${LOAD}/config/onebot11_${QQ}.json ]] && cp ${LOAD}/config/onebot11.json ${LOAD}/config/onebot11_${QQ}.json
-
+[[ ! -e ${LOAD}/config/webui.json ]] && echo '{
+    "host": "0.0.0.0",
+    "port": 0,
+    "prefix": "",
+    "token": "0",
+    "loginRate": 0
+}' > ${LOAD}/config/webui.json
 # 挂载login垃圾时刻
 LOGIN=${NCQQ}/${QQ}/QQ
 if [[ ! -d ${LOGIN} ]] {
@@ -68,7 +74,7 @@ msfConfig="--dev-bind ${LOGIN} ${HOME}/.config/QQ --ro-bind ${LOAD}/config/napca
 
 	QQconfig="--ro-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json \
 	 ${msfConfig} \
-	"
+	--dev-bind ${LOAD}/config/webui.json ${napcatQQ}/config/webui.json "
 	trap "rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files ; return -1"  TERM HUP INT
 } else { QQconfig="--dev-bind ${LOAD}/config ${napcatQQ}/config"
 trap "rm -rf ${napcatQQ} ${NCQQ}/QQ ; return -1"  TERM HUP INT
