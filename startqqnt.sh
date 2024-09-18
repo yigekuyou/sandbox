@@ -63,14 +63,13 @@ function command_exists() {
 	local command="$1"
 	command -v "${command}" >/dev/null 2>&1
 }
-
+setopt no_nomatch
 if [[ -d "${LOAD}" ]] {
 	{ Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
 	if [[ -f $LOAD/data/data/LiteLoader/config.json  ]] {
 		pushd $LOAD/data/data
 		for dir in ./*
 			do
-			if [[ -d "$dir/*" ]] {
 				for file in ./$dir/*
 					do
 					if [[ -f "$file" ]] {
@@ -83,7 +82,6 @@ if [[ -d "${LOAD}" ]] {
 						}
 					}
 					done
-			}
 			done
 		popd
 	} else { Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
@@ -94,9 +92,16 @@ if [[ -d "${LOAD}" ]] {
 	--dev-bind $LOAD/data/config.json ${QQ_APP_DIR}/resources/app/LiteLoader/data/config.json \
 	--ro-bind /etc/ssl /etc/ssl \
 	--setenv LITELOADERQQNT_PROFILE ${QQ_APP_DIR}/resources/app/LiteLoader/data"
-	grep -q LiteLoader ${QQ_APP_DIR}/resources/app/app_launcher/index.js|| sed -i "1 i require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");"  ${QQ_APP_DIR}/resources/app/app_launcher/index.js
-} else { grep -q LiteLoader ${QQ_APP_DIR}/resources/app/app_launcher/index.js&&sed -i "1d"  ${QQ_APP_DIR}/resources/app/app_launcher/index.js }
-
+	echo "const fs = require(\"fs\");
+	const path = require(\"path\");
+	const package_path = path.join(process.resourcesPath, \"app/package.json\");
+	const package = require(package_path);
+	package.main = \"./application/app_launcher/index.js\";
+	require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");
+	require('../major.node').load('internal_index', module);" > ${QQ_APP_DIR}/index.js
+jq --arg jsPath app_launcher/index.js \
+    '.main = $jsPath' "${QQ_APP_DIR}/resources/app/package.json" > ${QQ_APP_DIR}/package.json
+}
 Wayland="--enable-wayland-ime  --enable-features=WebRTCPipeWireCapturer"
 
 	set_up_dbus_proxy() {
@@ -123,14 +128,14 @@ Wayland="--enable-wayland-ime  --enable-features=WebRTCPipeWireCapturer"
 	--talk=org.freedesktop.DBus.NameAcquired \
 	--talk=org.gtk.vfs.Daemon \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenFile \
-	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenURI  \
+	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.OpenURI.OpenURI \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.OpenPipeWireRemote \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Request.Response \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.CreateSession \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.Start \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.ScreenCast.SelectSources \
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Session.Close \
-#  	--log &> /tmp/logs/dbus
+#   	--log &> /tmp/logs/dbus
 	}
 xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
 Part="--new-session --unshare-all --share-net  --die-with-parent \
@@ -161,6 +166,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--dev-bind ${LOGIN} ${HOME}/.config/QQ \
 	--tmpfs ${HOME}/.config/QQ/crash_files \
 	--tmpfs ${HOME}/.config/QQ/Crashpad \
+	--tmpfs ${HOME}/.config/QQ/versions \
 	--proc /proc \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--dev-bind /tmp /tmp \
@@ -173,6 +179,8 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY} ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY} \
 	--dev-bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
 	--ro-bind /lib64/libvulkan.so.1 ${QQ_APP_DIR}/libvulkan.so.1 \
+	--ro-bind ${QQ_APP_DIR}/index.js ${QQ_APP_DIR}/resources/app/app_launcher/index.js \
+	--ro-bind ${QQ_APP_DIR}/package.json ${QQ_APP_DIR}/resources/app/package.json \
 	--tmpfs /dev/shm  \
 	--ro-bind-try "${XDG_CONFIG_HOME}/gtk-3.0" "${XDG_CONFIG_HOME}/gtk-3.0" \
 	--setenv NO_AT_BRIDGE 1 \
