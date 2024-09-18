@@ -11,7 +11,7 @@ QQdir=${CMD%% *}
 NCQQ=/tmp/NCQQ
 QQ_APP_DIR=${NCQQ}/squashfs-root
 APPDIR=${QQ_APP_DIR}
-napcatQQ=${QQ_APP_DIR}/resources/app/NapCat${QQ}
+napcatQQ=${QQ_APP_DIR}/resources/app/app_launcher/NapCat${QQ}
 
 keyname=AppImage
 	if [[ ${${CMD##* }##*\.} == ${keyname} ]] {
@@ -41,6 +41,7 @@ rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp
 	mkdir -p "$APP_FOLDER"
 	echo "[Application]
 name=$APP_NAME" > ${QQ_APP_DIR}/flatpak-info
+
 }
 function command_exists() {
 	local command="$1"
@@ -93,16 +94,15 @@ touch ${LOG}
 
 # 不是哥们 没这个就会死
 if [[ -d "${LOAD}/node_modules" ]] {
-FIFO="${napcatQQ}/qrcode.png"
+FIFO="${napcatQQ}/cache/qrcode.png"
 mkdir ${napcatQQ}
 NCqq="--ro-bind $LOAD/package.json ${napcatQQ}/package.json \
 ${QQconfig} \
 --ro-bind $LOAD/node_modules ${napcatQQ}/node_modules \
 --ro-bind $LOAD/napcat.mjs ${napcatQQ}/napcat.mjs"
-	echo "const path = require('path');
-    (async () => {
-        await import(\"file://\" + path.join('${napcatQQ}/napcat.mjs'));
-    })();" >${napcatQQ}/index.js
+	echo "(async () => {await import('file:///${napcatQQ}/napcat.mjs');})();" >${napcatQQ}/index.js
+jq --arg jsPath loadNapCat.js \
+    '.main = $jsPath' "${QQ_APP_DIR}/resources/app/package.json" > ${napcatQQ}/tmp
 } else {
 echo 提醒需要把启动脚本放入napcat的根目录 \n
 [[ -e ${LOAD}/README.md ]]&&echo "还是说没有node_modules？ \n 帮你打开看看" &&xdg-open ${LOAD}/README.md
@@ -134,16 +134,18 @@ Part="--unshare-all --share-net --new-session --die-with-parent \
 	--proc /proc \
 	--dev-bind /tmp /tmp \
 	--bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
-	--ro-bind ${napcatQQ}/index.js ${QQ_APP_DIR}/resources/app/app_launcher/index.js
+	--ro-bind ${napcatQQ}/index.js ${QQ_APP_DIR}//resources/app/loadNapCat.js \
+	--ro-bind ${napcatQQ}/tmp ${QQ_APP_DIR}//resources/app/package.json  \
 	--tmpfs /dev/shm  \
+	--unsetenv SESSION_MANAGER \
 	--setenv  PATH  /bin \
 	--setenv ELECTRON_OZONE_PLATFORM_HINT auto \
 	--setenv ELECTRON_RUN_AS_NODE 1 \
 	--setenv APPDIR ${APPDIR} \
 	${NCqq} \
-	-- sh -c \" echo \$\$ > ${HOME}/.config/QQ/pid && ${DEBUGCMD} ${APPDIR}/qq ${napcatQQ}/napcat.mjs ${QQlogin} ${CMD#* } \"  "
+	-- sh -c \" echo \$\$ > ${HOME}/.config/QQ/pid && ${DEBUGCMD} ${APPDIR}/qq --no-sandbox  ${QQlogin} ${CMD#* } \"  "
 	#子进程监听任务
 # set_up_dbus_proxy &
-(timeout 30 tail -f -n0 ${LOG} |grep -q "qrcode.png"  && xdg-open $FIFO &&timeout 120 tail -f -n0 ${LOG} |grep -q "onQRCodeSessionFailed 1"&&pkill -15 -P $$ ) &
+(timeout 30 tail -f -n0 ${LOG} |grep -q "qrcode.png" | && xdg-open $FIFO &&timeout 120 tail -f -n0 ${LOG} |grep -q "onQRCodeSessionFailed 1"&&pkill -15 -P $$ ) &
 # 主进程
 echo $Part|xargs bwrap  &>${LOG} ;pkill -TERM -P $$
