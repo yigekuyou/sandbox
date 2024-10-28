@@ -111,9 +111,9 @@ msfConfig="--dev-bind ${LOGIN} ${HOME}/.config/QQ --ro-bind ${LOAD}/config/napca
 	--ro-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json \
 	 ${msfConfig} \
 	--dev-bind ${LOAD}/config/webui.json ${napcatQQ}/config/webui.json "
-	trap "rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files $NCQQ/NapCat ; return -1"  TERM HUP INT
+	trap "updatenapcat ;rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files $NCQQ/NapCat ; return -1"  TERM HUP INT
 } else { QQconfig="--dev-bind ${LOAD}/config ${napcatQQ}/config"
-trap "rm -rf ${napcatQQ} $NCQQ/NapCat ${NCQQ}/QQ ; return -1"  TERM HUP INT
+trap "updatenapcat;rm -rf ${napcatQQ} $NCQQ/NapCat ${NCQQ}/QQ ; return -1"  TERM HUP INT
 }
 # 暂存日志 记得打开配置的debug
 if  [[ ${DEBUG} ]] {
@@ -162,7 +162,7 @@ tar -cvf -node_modules  napcat.mjs package.json | zstd -T0 > $NapCat/NapCat.tar.
 popd
 cp -rp ${NCQQ}/napcat.packet/packet $NapCat/packet
 }
-rm -rf NapCat
+rm -rf ${NCQQ}/NapCat
 if [[ -e "$NapCat/NapCat.tar.zst" ]] {
 mkdir -p ${NCQQ}/NapCat
 cp $NapCat/NapCat.tar.zst ${NCQQ}/NapCat
@@ -204,15 +204,7 @@ ${QQconfig} \
 jq --arg jsPath loadNapCat.js \
     '.main = $jsPath' "${QQ_APP_DIR}/resources/app/package.json" > ${napcatQQ}/tmp
 
-set_up_packet() {
-	bwrap \
-	--new-session \
-	--ro-bind /lib64 /lib64 \
-	--tmpfs /bin \
-	--tmpfs /tmp \
-	--ro-bind $NapCat/packet /bin/packet \
-	--die-with-parent \
-	-- /bin/packet }
+
 #	这是我的一小步
 Part="--unshare-all --share-net --new-session --die-with-parent \
 	--symlink usr/lib /lib \
@@ -248,10 +240,12 @@ Part="--unshare-all --share-net --new-session --die-with-parent \
 	--setenv ELECTRON_RUN_AS_NODE 1 \
 	--setenv APPDIR ${APPDIR} \
 	${NCqq} \
-	-- sh -c \"${DEBUGCMD} ${APPDIR}/qq --no-sandbox ${napcatQQ}/napcat.mjs   ${QQlogin} ${CMD#* }  \"  "
+	--ro-bind $NapCat/packet ${NCQQ}/packet \
+	-- sh -c \"(${NCQQ}/packet) & ${DEBUGCMD} ${APPDIR}/qq --no-sandbox ${napcatQQ}/napcat.mjs   ${QQlogin} ${CMD#* }  \"  "
 	#子进程监听任务
-set_up_packet &
 sleep 1
 (timeout 30 tail -f -n0 ${LOG} |grep "qrcode" |awk '{print $7}' | xargs xdg-open) &
 # 主进程
-echo $Part|xargs bwrap  &>${LOG} ;pkill -TERM -P $$
+echo $Part|xargs bwrap  &>${LOG}
+updatenapcat
+pkill -TERM -P $$
