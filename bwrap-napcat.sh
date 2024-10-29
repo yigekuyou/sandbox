@@ -50,7 +50,7 @@ mkdir -p ${NapCat}
 }
 if [[ ! -d "${QQ_APP_DIR}" ]] {
 # 从一大串arg提取key
-trap "rm -rf ${NCQQ} $APP_FOLDE ;return -1" INT
+trap "rm -rf ${NCQQ} $APP_FOLDE  ;return -1" INT
 mkdir -p ${QQ_APP_DIR}
 mkdir -p ${NCQQ}/NapCat.Shell
 chmod 700 ${NCQQ}
@@ -111,9 +111,9 @@ msfConfig="--dev-bind ${LOGIN} ${HOME}/.config/QQ --ro-bind ${LOAD}/config/napca
 	--ro-bind ${LOAD}/config/onebot11_${QQ}.json ${napcatQQ}/config/onebot11_${QQ}.json \
 	 ${msfConfig} \
 	--dev-bind ${LOAD}/config/webui.json ${napcatQQ}/config/webui.json "
-	trap "updatenapcat ;rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files $NCQQ/NapCat ; return -1"  TERM HUP INT
+	trap "rm -rf ${napcatQQ} ${NCQQ}/${QQ}/crash_files $NCQQ/NapCat ; return -1"  TERM HUP INT
 } else { QQconfig="--dev-bind ${LOAD}/config ${napcatQQ}/config"
-trap "updatenapcat;rm -rf ${napcatQQ} $NCQQ/NapCat ${NCQQ}/QQ ; return -1"  TERM HUP INT
+trap "rm -rf ${napcatQQ} $NCQQ/NapCat  ; return -1"  TERM HUP INT
 }
 # 暂存日志 记得打开配置的debug
 if  [[ ${DEBUG} ]] {
@@ -150,17 +150,18 @@ napcat_version=$(curl "https://nclatest.znin.net/" | jq -r '.tag_name')
     elif [ "$system_arch" = "arm64" ]; then
         napcat_dlc_download_url="${target_proxy:+${target_proxy}/}https://github.com/NapNeko/NapCatQQ/releases/download/$napcat_version/napcat.packet.arm64"
     fi
+curl -L "$napcat_download_url" -o ${NCQQ}/NapCat.Shell.zip
+unzip -q -o -d ${NCQQ}/NapCat.Shell ${NCQQ}/NapCat.Shell.zip
+pushd  ${NCQQ}/NapCat.Shell
+tar -cvf - node_modules  napcat.mjs package.json | zstd -T0 > ${NCQQ}/NapCat/NapCat.tar.zst
+popd
+mv ${NCQQ}/NapCat/NapCat.tar.zst $NapCat/NapCat.tar.zst
+rm -rf ${NCQQ}/NapCat.Shell
+
 mkdir ${NCQQ}/napcat.packet
 curl -L "$napcat_dlc_download_url" -o ${NCQQ}/napcat.packet/packet
-
-curl -L "$napcat_download_url" -o ${NCQQ}/NapCat.Shell.zip
-
 chmod +x ${NCQQ}/napcat.packet/packet
-unzip -q -o -d ${NCQQ}/NapCat.Shell ${NCQQ}/NapCat.Shell.zip
-pushd  NapCat.Shell
-tar -cvf -node_modules  napcat.mjs package.json | zstd -T0 > $NapCat/NapCat.tar.zst
-popd
-cp -rp ${NCQQ}/napcat.packet/packet $NapCat/packet
+mv ${NCQQ}/napcat.packet/packet $NapCat/packet
 }
 rm -rf ${NCQQ}/NapCat
 if [[ -e "$NapCat/NapCat.tar.zst" ]] {
@@ -204,9 +205,8 @@ ${QQconfig} \
 jq --arg jsPath loadNapCat.js \
     '.main = $jsPath' "${QQ_APP_DIR}/resources/app/package.json" > ${napcatQQ}/tmp
 
-
 #	这是我的一小步
-Part="--unshare-all --share-net --new-session --die-with-parent \
+Part="--unshare-ipc --unshare-uts --unshare-cgroup-try --unshare-user-try --new-session --die-with-parent   \
 	--symlink usr/lib /lib \
 	--symlink usr/lib64 /lib64 \
 	--ro-bind /usr /usr \
@@ -240,12 +240,21 @@ Part="--unshare-all --share-net --new-session --die-with-parent \
 	--setenv ELECTRON_RUN_AS_NODE 1 \
 	--setenv APPDIR ${APPDIR} \
 	${NCqq} \
-	--ro-bind $NapCat/packet ${NCQQ}/packet \
-	-- sh -c \"(${NCQQ}/packet) & ${DEBUGCMD} ${APPDIR}/qq --no-sandbox ${napcatQQ}/napcat.mjs   ${QQlogin} ${CMD#* }  \"  "
+	-- sh -c \" ${DEBUGCMD} ${APPDIR}/qq --no-sandbox ${napcatQQ}/napcat.mjs   ${QQlogin} ${CMD#* }  \"  "
 	#子进程监听任务
 sleep 1
 (timeout 30 tail -f -n0 ${LOG} |grep "qrcode" |awk '{print $7}' | xargs xdg-open) &
+($NapCat/packet &> /tmp/logs/log ) &
+pid=$!
 # 主进程
-echo $Part|xargs bwrap  &>${LOG}
+(echo $Part|xargs bwrap  &>${LOG}) &
+PID=$!
+while (true)  {
+rm -rf NapCat.Shell
 updatenapcat
+sleep 3650
+} &
+update=$!
+wait $PID
+wait $update
 pkill -TERM -P $$
