@@ -16,7 +16,25 @@ LOAD=$(dirname $(readlink -f $0))/LiteLoaderQQNT
 CMD=$*
 QQdir=${CMD%% *}
 
+function get_system_arch() { echo $(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) }
+system_arch=$(get_system_arch)
 
+function get_qq() {
+    response=$( curl -s "https://nclatest.znin.net/get_qq_ver" )
+    remoteQQVer=$( echo "$response" | jq -r '.linuxVersion' )
+    remoteQQVerHash=$( echo "$response" | jq -r '.linuxVerHash' )
+    echo "$remoteQQVer $remoteQQVerHash"
+
+    base_url="https://dldir1.qq.com/qqfile/qq/QQNT/$remoteQQVerHash/linuxqq_$remoteQQVer"
+    if [ "$system_arch" = "amd64" ]; then
+            qq_download_url="${base_url}_x86_64.AppImage"
+    elif [ "$system_arch" = "arm64" ]; then
+            qq_download_url="${base_url}_arm64.AppImage"
+    fi
+
+curl -L "$qq_download_url" -o ${NCQQ}/linuxqq.AppImage
+mv ${NCQQ}/linuxqq.AppImage $HOME/.cache
+}
 # 环境问题
 if [[ ! -d ${LOGIN} ]] {
 mkdir -p  ${LOGIN}
@@ -29,17 +47,25 @@ keyname=AppImage
 	#别动 不然启动后缀出现两次
 	unset CMD
 }
-
+if [[ ! -d "${APP_FOLDER}" ]] {
+mkdir -p ${APP_FOLDER}
+}
 if [[ ! -d "${QQ_APP_DIR}" ]] {
 # 从一大串arg提取key
 
 	#下面请随意
 	if [[  ${QQdir##*\.} != ${keyname} ]] {
 	echo "only name./AppImage"
-	return -1
+	QQdir=$HOME/.cache/linuxqq.AppImage
 	}
-	trap "rm -rf ${QQ_APP_DIR} ${APP_FOLDER} ;return -1"INT
-	mkdir -p ${APP_FOLDER}
+	if [[ ! -f "${QQdir}" ]] {
+		QQdir=$HOME/.cache/linuxqq.AppImage
+	}
+	if [[ ! -f "${QQdir}" ]] {
+		get_qq
+	}
+
+	trap "rm -rf ${QQ_APP_DIR}  ;return -1"INT
 	cp $QQdir ${QQ_APP_ROOTDIR}
 	cd ${QQ_APP_ROOTDIR}
 	chmod +x ${QQ_APP_ROOTDIR}/${QQdir##*\/}
@@ -70,10 +96,10 @@ if [[ -d "${LOAD}" ]] {
 		pushd $LOAD/data/data
 		for dir in ./*
 			do
+			Config="${Config} --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/data/$dir"
 				for file in ./$dir/*
 					do
 					if [[ -f "$file" ]] {
-						Config="${Config} --tmpfs ${QQ_APP_DIR}/resources/app/LiteLoader/data/data/$dir"
 						Config="${Config} --dev-bind $LOAD/data/data/$file ${QQ_APP_DIR}/resources/app/LiteLoader/data/data/$file"
 					} else
 					{
@@ -97,7 +123,8 @@ if [[ -d "${LOAD}" ]] {
 	const package_path = path.join(process.resourcesPath, \"app/package.json\");
 	const package = require(package_path);
 	package.main = \"./application/app_launcher/index.js\";
-	require(\"${QQ_APP_DIR}/resources/app/LiteLoader/\");
+	fs.writeFileSync(package_path, JSON.stringify(package, null, 4), \"utf-8\");
+	require('${QQ_APP_DIR}/resources/app/LiteLoader/');
 	require('../major.node').load('internal_index', module);" > ${QQ_APP_DIR}/index.js
 jq --arg jsPath app_launcher/index.js \
     '.main = $jsPath' "${QQ_APP_DIR}/resources/app/package.json" > ${QQ_APP_DIR}/package.json
@@ -137,7 +164,7 @@ Wayland="--enable-wayland-ime  --enable-features=WebRTCPipeWireCapturer"
 	--call=org.freedesktop.portal.Desktop=org.freedesktop.portal.Session.Close \
 #   	--log &> /tmp/logs/dbus
 	}
-xauth=`echo ${XDG_RUNTIME_DIR}/xauth_*`
+xauth=`xauth  info |grep ${XDG_RUNTIME_DIR} |awk '{print $3}'`
 Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--symlink usr/lib /lib \
 	--symlink usr/lib64 /lib64 \
@@ -154,7 +181,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind-try /run/systemd/userdb /run/systemd/userdb \
 	--ro-bind /etc/localtime /etc/localtime \
 	--ro-bind /etc/resolv.conf /etc/resolv.conf \
-	--ro-bind /etc/vulkan /etc/vulkan \
+	--ro-bind /usr/share/vulkan /usr/share/vulkan \
 	--dev-bind /dev/ /dev/ \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--ro-bind /sys/dev/char /sys/dev/char \
@@ -180,7 +207,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--dev-bind "${QQ_APP_DIR}" "${QQ_APP_DIR}" \
 	--ro-bind /lib64/libvulkan.so.1 ${QQ_APP_DIR}/libvulkan.so.1 \
 	--ro-bind ${QQ_APP_DIR}/index.js ${QQ_APP_DIR}/resources/app/app_launcher/index.js \
-	--ro-bind ${QQ_APP_DIR}/package.json ${QQ_APP_DIR}/resources/app/package.json \
+	--dev-bind ${QQ_APP_DIR}/package.json ${QQ_APP_DIR}/resources/app/package.json \
 	--tmpfs /dev/shm  \
 	--ro-bind-try "${XDG_CONFIG_HOME}/gtk-3.0" "${XDG_CONFIG_HOME}/gtk-3.0" \
 	--setenv NO_AT_BRIDGE 1 \
