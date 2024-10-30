@@ -249,17 +249,17 @@ Part="--unshare-ipc --unshare-uts --unshare-cgroup-try --unshare-user-try --new-
 	#子进程监听任务
 sleep 1
 (timeout 30 tail -f -n0 ${LOG} |grep "qrcode" |awk '{print $7}' | xargs xdg-open) &
+if ( ! curl localhost:8086  > /dev/null   ) {
 ($NapCat/packet &> /tmp/logs/log ) &
-pid=$!
+}
 # 主进程
-(echo $Part|xargs bwrap  &>${LOG}) &
-PID=$!
 while (true)  {
 rm -rf NapCat.Shell
 updatenapcat
 sleep 3650
 } &
 update=$!
-wait $PID
-wait $update
+trap "rm -rf ${napcatQQ} $NCQQ/NapCat;kill -9 $PID ;kill -9 $update ;pkill -TERM -P $$; return -1"  TERM HUP INT
+echo $Part|xargs bwrap  &>${LOG}
+PID=$!
 pkill -TERM -P $$
