@@ -18,10 +18,9 @@ keyname=AppImage
 	#别动 不然启动后缀出现两次
 	unset CMD
 	}
-function get_system_arch() {
-    echo $(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/)
-}
+function get_system_arch() { echo $(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) }
 system_arch=$(get_system_arch)
+
 function get_qq() {
     response=$( curl -s "https://nclatest.znin.net/get_qq_ver" )
     remoteQQVer=$( echo "$response" | jq -r '.linuxVersion' )
@@ -36,38 +35,43 @@ function get_qq() {
     fi
 
 curl -L "$qq_download_url" -o ${NCQQ}/linuxqq.AppImage
-cp ${NCQQ}/linuxqq.AppImage $HOME/.cache
-
+mv ${NCQQ}/linuxqq.AppImage $HOME/.cache
 }
+
 # 环境问题
 LOAD=$HOME/.config/$APP_NAME
 if [[ ! -d "${LOAD}/config" ]] {
 mkdir -p ${LOAD}/config
 }
+
 NapCat=$HOME/.local/share/$APP_NAME
 if [[ ! -d "${NapCat}" ]] {
 mkdir -p ${NapCat}
 }
-if [[ ! -d "${QQ_APP_DIR}" ]] {
+
+if [[ ! -f "${APPDIR}/qq" ]] {
 # 从一大串arg提取key
 trap "rm -rf ${NCQQ} $APP_FOLDE  ;return -1" INT
 mkdir -p ${QQ_APP_DIR}
+chmod 755 ${NCQQ}
 mkdir -p ${NCQQ}/NapCat.Shell
-chmod 700 ${NCQQ}
 cd ${NCQQ}
+
 	if [[  ${QQdir##*\.} != ${keyname} ]] {
 	echo "only name./AppImage"
 	QQdir=$HOME/.cache/linuxqq.AppImage
-	if [[ ! -e "${QQdir}" ]] {
-	get_qq
-	} else { cp $QQdir ${NCQQ} }
-linuxNameQQ=linuxqq.AppImage
-	} else {
-	linuxNameQQ=${QQdir##*\/}
-	cp $QQdir ${NCQQ}
-}
+	}
+	if [[ ! -f "${QQdir}" ]] {
+		QQdir=$HOME/.cache/linuxqq.AppImage
+	}
+	if [[ ! -f "${QQdir}" ]] {
+		get_qq
+	}
+
+linuxNameQQ=${QQdir##*\/}
+cp $QQdir ${NCQQ}/$linuxNameQQ
 chmod +x ${NCQQ}/$linuxNameQQ
-./$linuxNameQQ --appimage-extract > /dev/null
+${NCQQ}/$linuxNameQQ --appimage-extract > /dev/null
 rm ${NCQQ}/$linuxNameQQ
 rm -rf ${QQ_APP_DIR}/resources/app/fonts
 rm -rf ${QQ_APP_DIR}/{usr/lib,libEGL.so,libGLESv2.so,libvk_swiftshader.so,libvulkan.so.*}
@@ -75,8 +79,9 @@ rm -f ${QQ_APP_DIR}/resources/app/{libssh2.so.1,libunwind*,sharp-lib/libvips-cpp
 	mkdir -p "$APP_FOLDER"
 	echo "[Application]
 name=$APP_NAME" > ${QQ_APP_DIR}/flatpak-info
-
+chmod 700 ${NCQQ}
 }
+cd ${NCQQ}
 function command_exists() {
 	local command="$1"
 	command -v "${command}" >/dev/null 2>&1
