@@ -157,6 +157,7 @@ napcat_version=$(curl "https://nclatest.znin.net/" | jq -r '.tag_name')
     fi
 curl -L "$napcat_download_url" -o ${NCQQ}/NapCat.Shell.zip
 unzip -q -o -d ${NCQQ}/NapCat.Shell ${NCQQ}/NapCat.Shell.zip
+rm ${NCQQ}/NapCat.Shell.zip
 pushd  ${NCQQ}/NapCat.Shell
 tar -cvf - node_modules  napcat.mjs package.json | zstd -T0 > ${NCQQ}/NapCat/NapCat.tar.zst
 popd
@@ -194,13 +195,22 @@ target_folder="${NCQQ}/NapCat"
         target_version=${napcat_version#v}
         IFS='.' read -r i1 i2 i3 <<< "$current_version"
         IFS='.' read -r t1 t2 t3 <<< "$target_version"
-        if (( i1 < t1 || (i1 == t1 && i2 < t2) || (i1 == t1 && i2 == t2 && i3 < t3) )); then
+        if (( i1 < t1 || (i1 == t1 && i2 < t2) || (i1 == t1 && i2 == t2 && i3 < t3) )); then {
             get_napcat
-        else
-            echo "已安装最新版本, 无需更新。"
+rm -rf ${NCQQ}/NapCat
+mkdir -p ${NCQQ}/NapCat
+cp $NapCat/NapCat.tar.zst ${NCQQ}/NapCat
+pushd ${NCQQ}/NapCat
+zstd -d NapCat.tar.zst
+tar -xf NapCat.tar
+popd
+echo 1
+        } else
+            echo 0
         fi
     fi
 }
+
 mkdir ${napcatQQ}
 NCqq="--ro-bind ${NCQQ}/NapCat/package.json ${napcatQQ}/package.json \
 ${QQconfig} \
@@ -248,18 +258,23 @@ Part="--unshare-ipc --unshare-uts --unshare-cgroup-try --unshare-user-try --new-
 	-- sh -c \" ${DEBUGCMD} ${APPDIR}/qq --no-sandbox ${napcatQQ}/napcat.mjs   ${QQlogin} ${CMD#* }  \"  "
 	#子进程监听任务
 sleep 1
-(timeout 30 tail -f -n0 ${LOG} |grep "qrcode" |awk '{print $7}' | xargs xdg-open) &
 if ( ! curl localhost:8086  > /dev/null   ) {
 ($NapCat/packet &> /tmp/logs/log ) &
 }
 # 主进程
-while (true)  {
-rm -rf NapCat.Shell
-updatenapcat
-sleep 3650
-} &
-update=$!
-trap "rm -rf ${napcatQQ} $NCQQ/NapCat;kill -9 $PID ;kill -9 $update ;pkill -TERM -P $$; return -1"  TERM HUP INT
-echo $Part|xargs bwrap  &>${LOG}
+trap "rm -rf ${napcatQQ} $NCQQ/NapCat;kill -9 $PID  ;pkill -TERM -P $$; return -1"  TERM HUP INT
+if ( ! `updatenapcat` ) {
+(echo $Part|xargs bwrap  &>${LOG} )&
 PID=$!
+(timeout 30 tail -f -n0 ${LOG} |grep "qrcode" |awk '{print $7}' | xargs xdg-open) &
+}
+while (true)  {
+if ( `updatenapcat` ) {
+kill $PID
+(echo $Part|xargs bwrap  &>${LOG} )&
+PID=$!
+(timeout 30 tail -f -n0 ${LOG} |grep "qrcode" |awk '{print $7}' | xargs xdg-open) &
+}
+sleep 3650
+}
 pkill -TERM -P $$
