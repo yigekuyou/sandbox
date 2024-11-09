@@ -104,6 +104,11 @@ QQlogin="-q ${QQ}"
 }' > ${LOAD}/config/webui.json
 # 挂载login垃圾时刻
 LOGIN=${NCQQ}/${QQ}/QQ
+if [ "$system_arch" = "amd64" ]; then
+MoeHoo=moehoo/MoeHoo.linux.x64.node
+elif [ "$system_arch" = "arm64" ]; then
+MoeHoo=moehoo/MoeHoo.linux.arm64.node
+fi
 if [[ ! -d ${LOGIN} ]] {
 mkdir -p ${LOGIN}
 }
@@ -150,24 +155,23 @@ napcat_version=$(curl "https://nclatest.znin.net/" | jq -r '.tag_name')
 
     napcat_download_url="${target_proxy:+${target_proxy}/}https://github.com/NapNeko/NapCatQQ/releases/download/$napcat_version/NapCat.Shell.zip"
 
-    if [ "$system_arch" = "amd64" ]; then
-        napcat_dlc_download_url="${target_proxy:+${target_proxy}/}https://github.com/NapNeko/NapCatQQ/releases/download/$napcat_version/napcat.packet.linux"
-    elif [ "$system_arch" = "arm64" ]; then
-        napcat_dlc_download_url="${target_proxy:+${target_proxy}/}https://github.com/NapNeko/NapCatQQ/releases/download/$napcat_version/napcat.packet.arm64"
-    fi
+#     if [ "$system_arch" = "amd64" ]; then
+#         napcat_dlc_download_url="${target_proxy:+${target_proxy}/}https://github.com/NapNeko/NapCatQQ/releases/download/$napcat_version/napcat.packet.linux"
+#     elif [ "$system_arch" = "arm64" ]; then
+#         napcat_dlc_download_url="${target_proxy:+${target_proxy}/}https://github.com/NapNeko/NapCatQQ/releases/download/$napcat_version/napcat.packet.arm64"
+#     fi
+# mkdir ${NCQQ}/napcat.packet
+# curl -L "$napcat_dlc_download_url" -o ${NCQQ}/napcat.packet/packet
+# chmod +x ${NCQQ}/napcat.packet/packet
+# mv ${NCQQ}/napcat.packet/packet $NapCat/packet
 curl -L "$napcat_download_url" -o ${NCQQ}/NapCat.Shell.zip
 unzip -q -o -d ${NCQQ}/NapCat.Shell ${NCQQ}/NapCat.Shell.zip
 rm ${NCQQ}/NapCat.Shell.zip
 pushd  ${NCQQ}/NapCat.Shell
-tar -cvf - node_modules  napcat.mjs package.json | zstd -T0 > ${NCQQ}/NapCat/NapCat.tar.zst
+tar -cvf - node_modules  napcat.mjs package.json $MoeHoo | zstd -T0 > ${NCQQ}/NapCat/NapCat.tar.zst
 popd
 mv ${NCQQ}/NapCat/NapCat.tar.zst $NapCat/NapCat.tar.zst
 rm -rf ${NCQQ}/NapCat.Shell
-
-mkdir ${NCQQ}/napcat.packet
-curl -L "$napcat_dlc_download_url" -o ${NCQQ}/napcat.packet/packet
-chmod +x ${NCQQ}/napcat.packet/packet
-mv ${NCQQ}/napcat.packet/packet $NapCat/packet
 }
 rm -rf ${NCQQ}/NapCat
 if [[ -e "$NapCat/NapCat.tar.zst" ]] {
@@ -204,9 +208,9 @@ pushd ${NCQQ}/NapCat
 zstd -d NapCat.tar.zst
 tar -xf NapCat.tar
 popd
-echo 1
+return 1
         } else
-            echo 0
+            return 0
         fi
     fi
 }
@@ -214,6 +218,7 @@ echo 1
 mkdir ${napcatQQ}
 NCqq="--ro-bind ${NCQQ}/NapCat/package.json ${napcatQQ}/package.json \
 ${QQconfig} \
+--ro-bind-try ${NCQQ}/NapCat/$MoeHoo ${napcatQQ}/$MoeHoo \
 --ro-bind ${NCQQ}/NapCat/node_modules ${napcatQQ}/node_modules \
 --ro-bind ${NCQQ}/NapCat/napcat.mjs ${napcatQQ}/napcat.mjs"
 	echo "(async () => {await import('file:///${napcatQQ}/napcat.mjs');})();" >${napcatQQ}/index.js
@@ -258,7 +263,7 @@ Part="--unshare-ipc --unshare-uts --unshare-cgroup-try --unshare-user-try --new-
 	-- sh -c \" ${DEBUGCMD} ${APPDIR}/qq --no-sandbox ${napcatQQ}/napcat.mjs   ${QQlogin} ${CMD#* }  \"  "
 	#子进程监听任务
 sleep 1
-if ( ! curl localhost:8086  > /dev/null   ) {
+if [[ -f $NapCat/packet  ]]&&( ! curl localhost:8086  > /dev/null   ) {
 ($NapCat/packet &> /tmp/logs/log ) &
 }
 # 主进程
