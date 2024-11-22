@@ -1,18 +1,61 @@
 #!/usr/bin/zsh
 APP_NAME=com.qq.QQ
+
 APP_FOLDER="$XDG_RUNTIME_DIR/app/$APP_NAME"
 XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 FONTCONFIG_HOME="${XDG_CONFIG_HOME}/fontconfig"
 XMODIFIERS=@im=fcitx
 
+
+function command_exists() {
+	local command="$1"
+	command -v "${command}" >/dev/null 2>&1
+}
+
+if [[ ! -v $XDG_DATA_HOME ]]; then
+    XDG_DATA_HOME=$HOME/.local/share
+elif [[ -z "$XDG_DATA_HOME" ]]; then
+    XDG_DATA_HOME=$HOME/.local/share
+else
+
+fi
+
+if [[ ${QQ} ]] {
+APP_NAME=com.qq.QQ.llonebot
+llonebot=1
+}
+
+LOAD=$(dirname $(readlink -f $0))/LiteLoaderQQNT
+LOADONEBOT=$(dirname $(readlink -f $0))/LLOneBot.tar.zst
+LOADONEBOTDIR=$(dirname $(readlink -f $0))
+if [[ ! -d "${LOAD}" ]] { LOAD=$XDG_DATA_HOME/LiteLoaderQQNT }
+if [[ ! -f "${LOADONEBOT}" ]] {
+LOADONEBOT=$XDG_DATA_HOME/LLOneBot/LLOneBot.tar.zst
+LOADONEBOTDIR=$XDG_DATA_HOME/LLOneBot
+if [[ ! -f "$LOADONEBOTDIR" ]] { mkdir -p $LOADONEBOTDIR }
+}
+
+
+if [[ ! -d "${LOAD}" ]] {
+cd $XDG_DATA_HOME
+git clone --depth 1 https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git
+mkdir -p $LOAD/data/plugins/ $XDG_CONFIG_HOME/LiteLoaderQQNT/data
+ln -s $XDG_CONFIG_HOME/LiteLoaderQQNT/data $LOAD/data/data
+echo '{
+    "LiteLoader": {
+        "disabled_plugins": []
+    }
+}' > $XDG_CONFIG_HOME/LiteLoaderQQNT/data/config.json:
+}
+
+
 # 驻波缓存
-QQ_APP_ROOTDIR=/tmp/QQ
-LOGIN=${QQ_APP_ROOTDIR}/${USER}
+QQ_APP_ROOTDIR=/tmp/QQ/
+LOGIN=${QQ_APP_ROOTDIR}/$APP_NAME
 
 QQ_APP_DIR=${QQ_APP_ROOTDIR}/squashfs-root
 APPDIR=${QQ_APP_DIR}
-LOAD=$(dirname $(readlink -f $0))/LiteLoaderQQNT
 CMD=$*
 QQdir=${CMD%% *}
 
@@ -85,10 +128,7 @@ name=$APP_NAME" > ${QQ_APP_DIR}/flatpak-info
 trap "exit -1" INT
 
 
-function command_exists() {
-	local command="$1"
-	command -v "${command}" >/dev/null 2>&1
-}
+
 setopt no_nomatch
 if [[ -d "${LOAD}" ]] {
 	{ Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
@@ -111,6 +151,36 @@ if [[ -d "${LOAD}" ]] {
 			done
 		popd
 	} else { Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
+	if [[ ${llonebot} == 1 ]] {
+
+function get_llonebot() {
+mkdir -p $(dirname $(readlink -f $0))/LLOneBot
+orgin=https://github.com/LLOneBot/LLOneBot.git
+versions=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' $orgin | tail --lines=1 | cut --delimiter='/' --fields=3)
+https_proxy=127.0.0.1:17200 curl -L https://github.com/LLOneBot/LLOneBot/releases/download/$versions/LLOneBot.zip -o ${QQ_APP_ROOTDIR}/LLOneBot.zip
+
+unzip -q -o -d ${QQ_APP_ROOTDIR}/LLOneBot ${QQ_APP_ROOTDIR}/LLOneBot.zip
+rm ${QQ_APP_ROOTDIR}/LLOneBot.zip
+
+pushd  ${QQ_APP_ROOTDIR}/LLOneBot
+tar -cvf - main node_modules  preload renderer icon.jpg manifest.json icon.webp | zstd -T0 > ${QQ_APP_ROOTDIR}/LLOneBot.tar.zst
+popd
+mv ${QQ_APP_ROOTDIR}/LLOneBot.tar.zst ${LOADONEBOTDIR}
+
+}
+
+if [[ -e "${LOADONEBOT}" ]] {
+rm -rf ${QQ_APP_ROOTDIR}/LLOneBot
+mkdir -p ${QQ_APP_ROOTDIR}/LLOneBot
+cp ${LOADONEBOT} ${QQ_APP_ROOTDIR}/LLOneBot
+pushd ${QQ_APP_ROOTDIR}/LLOneBot
+zstd -d LLOneBot.tar.zst
+tar -xf LLOneBot.tar.zst
+popd
+} else {get_llonebot}
+
+Config="${Config} --dev-bind ${QQ_APP_ROOTDIR}/LLOneBot ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins/LLOneBot"
+}
 	LiteLoader="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/LiteLoader/package.json \
 	--ro-bind $LOAD/src ${QQ_APP_DIR}/resources/app/LiteLoader/src \
 	--dev-bind $LOAD/data/plugins ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins \
@@ -177,6 +247,8 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--ro-bind /usr/bin/bash /bin/bash \
 	--ro-bind /usr/bin/zsh /bin/sh \
 	--ro-bind /etc/machine-id /etc/machine-id \
+	--ro-bind /usr/bin/ffprobe /bin/ffprobe  \
+	--ro-bind /usr/bin/ffmpeg /bin/ffmpeg  \
 	--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
 	--ro-bind-try /run/systemd/userdb /run/systemd/userdb \
 	--ro-bind /etc/localtime /etc/localtime \
