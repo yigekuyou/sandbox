@@ -7,7 +7,6 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 FONTCONFIG_HOME="${XDG_CONFIG_HOME}/fontconfig"
 XMODIFIERS=@im=fcitx
 
-
 function command_exists() {
 	local command="$1"
 	command -v "${command}" >/dev/null 2>&1
@@ -42,11 +41,7 @@ cd $XDG_DATA_HOME
 git clone --depth 1 https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git
 mkdir -p $LOAD/data/plugins/ $XDG_CONFIG_HOME/LiteLoaderQQNT/data
 ln -s $XDG_CONFIG_HOME/LiteLoaderQQNT/data $LOAD/data/data
-echo '{
-    "LiteLoader": {
-        "disabled_plugins": []
-    }
-}' > $XDG_CONFIG_HOME/LiteLoaderQQNT/data/config.json:
+echo '{"LiteLoader": {"disabled_plugins": []}}' > $XDG_CONFIG_HOME/LiteLoaderQQNT/data/config.json
 }
 
 
@@ -108,6 +103,10 @@ if [[ ! -d "${QQ_APP_DIR}" ]] {
 		get_qq
 	}
 
+	pushd ${LOAD}
+	git pull
+	popd
+
 	trap "rm -rf ${QQ_APP_DIR}  ;return -1"INT
 	cp $QQdir ${QQ_APP_ROOTDIR}
 	cd ${QQ_APP_ROOTDIR}
@@ -152,21 +151,25 @@ if [[ -d "${LOAD}" ]] {
 		popd
 	} else { Config="--dev-bind $LOAD/data/data ${QQ_APP_DIR}/resources/app/LiteLoader/data/data" }
 	if [[ ${llonebot} == 1 ]] {
-
+Config="${Config} --dev-bind ${QQ_APP_ROOTDIR}/LLOneBot ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins/LLOneBot"
+Config="${Config} --dev-bind $XDG_CONFIG_HOME/LiteLoaderQQNT/data/LLOneBot/ ${QQ_APP_DIR}/resources/app/LiteLoader/data/data/LLOneBot"
 function get_llonebot() {
-mkdir -p $(dirname $(readlink -f $0))/LLOneBot
 orgin=https://github.com/LLOneBot/LLOneBot.git
-versions=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' $orgin | tail --lines=1 | cut --delimiter='/' --fields=3)
-https_proxy=127.0.0.1:17200 curl -L https://github.com/LLOneBot/LLOneBot/releases/download/$versions/LLOneBot.zip -o ${QQ_APP_ROOTDIR}/LLOneBot.zip
+versions=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' $orgin | tail --lines=1 | cut --delimiter='/' --fields=3|cut --delimiter='^' --fields=1)
+if [[ $versions_old != $versions ]] {
+rm -rf ${QQ_APP_ROOTDIR}/LLOneBot/*
+
+
+curl -L https://github.com/LLOneBot/LLOneBot/releases/download/$versions/LLOneBot.zip -o ${QQ_APP_ROOTDIR}/LLOneBot.zip
 
 unzip -q -o -d ${QQ_APP_ROOTDIR}/LLOneBot ${QQ_APP_ROOTDIR}/LLOneBot.zip
 rm ${QQ_APP_ROOTDIR}/LLOneBot.zip
-
 pushd  ${QQ_APP_ROOTDIR}/LLOneBot
 tar -cvf - main node_modules  preload renderer icon.jpg manifest.json icon.webp | zstd -T0 > ${QQ_APP_ROOTDIR}/LLOneBot.tar.zst
 popd
 mv ${QQ_APP_ROOTDIR}/LLOneBot.tar.zst ${LOADONEBOTDIR}
 
+}
 }
 
 if [[ -e "${LOADONEBOT}" ]] {
@@ -176,10 +179,14 @@ cp ${LOADONEBOT} ${QQ_APP_ROOTDIR}/LLOneBot
 pushd ${QQ_APP_ROOTDIR}/LLOneBot
 zstd -d LLOneBot.tar.zst
 tar -xf LLOneBot.tar.zst
+versions_old=$(cat  manifest.json |jq -r .version)
+get_llonebot
 popd
-} else {get_llonebot}
+} else {
+versions_old=0
+get_llonebot
+}
 
-Config="${Config} --dev-bind ${QQ_APP_ROOTDIR}/LLOneBot ${QQ_APP_DIR}/resources/app/LiteLoader/data/plugins/LLOneBot"
 }
 	LiteLoader="--ro-bind $LOAD/package.json ${QQ_APP_DIR}/resources/app/LiteLoader/package.json \
 	--ro-bind $LOAD/src ${QQ_APP_DIR}/resources/app/LiteLoader/src \
@@ -287,7 +294,7 @@ Part="--new-session --unshare-all --share-net  --die-with-parent \
 	--setenv ELECTRON_OZONE_PLATFORM_HINT auto \
 	--setenv APPDIR ${APPDIR} \
 	${LiteLoader} ${HOTUPDATE}   \
-	${APPDIR}/qq ${CMD#* } --ignore-gpu-blocklist ${Wayland}  --force-dark-mode --enable-features=WebUIDarkMode --enable-zero-copy ${APPDIR}/resources/app"
+	${APPDIR}/qq ${CMD#* } --ignore-gpu-blocklist ${Wayland} --no-sandbox --force-dark-mode --enable-features=WebUIDarkMode --enable-zero-copy ${APPDIR}/resources/app"
 	#strace -y -o /tmp/logs/log
 set_up_dbus_proxy &
 bwrap `echo $Part`
