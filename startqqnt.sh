@@ -242,7 +242,7 @@ Wayland="--enable-wayland-ime  --enable-features=WebRTCPipeWireCapturer"
 	--ro-bind /usr/lib64 /usr/lib64 \
 	--ro-bind /usr/bin /usr/bin \
 	--bind "$XDG_RUNTIME_DIR" "$XDG_RUNTIME_DIR" \
-	--ro-bind ${QQ_APP_DIR}/flatpak-info "/.flatpak-info" \
+	--ro-bind ${QQ_APP_DIR}/flatpak-info "$XDG_RUNTIME_DIR/.flatpak-info" \
 	--die-with-parent \
 	-- \
 	env -i xdg-dbus-proxy \
