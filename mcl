@@ -1,30 +1,9 @@
 #!/usr/bin/zsh
 LOAD=$(dirname $(readlink -f $0))
 setopt no_nomatch
-HOME=/var/mcl
-	for sdir in data
-	do
-	if [[ -d "${LOAD}/${sdir}" ]] {
-	{ Config="${Config} --dev-bind $LOAD/${sdir}/ $HOME/${sdir}/" }
-	pushd $LOAD/${sdir}/
-	for dir in ./*
-		do
-			for file in ./$dir/*
-				do
-				Config="${Config} --tmpfs  $HOME/${sdir}/$dir"
-				if [[ -f "$file" ]] {
-					Config="${Config} --dev-bind $LOAD/${sdir}/$file  $HOME/${sdir}/$file"
-				} else
-				{
-					if [[ -d "$file" ]] {
-					Config="${Config} --dev-bind $LOAD/${sdir}/$file  $HOME/${sdir}/$file"
-					}
-				}
-				done
-		done
-	popd
-}
-	done
+
+HOME=/tmp/QQ/mcl
+cd $HOME
 Part="--dev /dev --proc /proc \
 	--new-session --clearenv --unshare-all --share-net  --die-with-parent \
 	--symlink usr/lib /lib \
@@ -33,13 +12,14 @@ Part="--dev /dev --proc /proc \
 	--ro-bind /usr/lib64 /usr/lib64 \
 	--ro-bind /usr/bin/ffprobe /bin/ffprobe  \
 	--ro-bind /usr/bin/ffmpeg /bin/ffmpeg  \
+	--ro-bind /usr/bin/mv /bin/mv \
 	--ro-bind /usr/bin/bash /bin/zsh \
 	--ro-bind /usr/share/ /usr/share/ \
 	--ro-bind-try /var/lib/ca-certificates /var/lib/ca-certificates \
 	--ro-bind /etc/machine-id /etc/machine-id \
 	--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
 	--ro-bind /etc/resolv.conf /etc/resolv.conf \
-	--ro-bind /etc/vulkan /etc/vulkan \
+	--ro-bind /usr/share/vulkan /usr/share/vulkan \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--ro-bind-try /var/cache/fontconfig/ /var/cache/fontconfig/ \
 	--ro-bind-try /etc/ld.so.cache /etc/ld.so.cache \
@@ -49,14 +29,15 @@ Part="--dev /dev --proc /proc \
 	--ro-bind /etc/pki /etc/pki \
 	--ro-bind-try /etc/fonts /etc/fonts \
 	--dev-bind /tmp /tmp \
-	--dev-bind /tmp $HOME/temp \
 	--tmpfs /dev/shm  \
+	--tmpfs $HOME/RUNTIME  \
 	--setenv HOME $HOME \
-	--setenv PWD $HOME \
 	--setenv LANG zh_CN.UTF-8 \
 	--setenv PATH /usr/local/bin:/usr/bin:/bin \
 	--setenv USER mcl \
+	--dev-bind-try /tmp/logs/onebot ${HOME}/.cache/LLOneBot/data/temp \
 	--dev-bind-try $LOAD/config/ $HOME/config/ \
+	--dev-bind-try $LOAD/conf $HOME/conf \
 	--dev-bind-try $LOAD/libs/ $HOME/libs/ \
 	--dev-bind-try $LOAD/modules/ $HOME/modules/ \
 	--dev-bind-try $LOAD/plugin-libraries/ $HOME/plugin-libraries/ \
@@ -65,8 +46,7 @@ Part="--dev /dev --proc /proc \
 	--dev-bind-try $LOAD/mcl.jar $HOME/mcl.jar \
 	--dev-bind-try $LOAD/config.json $HOME/config.json \
 	--dev-bind-try $LOAD/overflow.json $HOME/overflow.json\
-	${Config} \
--- zsh -c \"cd $HOME && $JRE_HOME/bin/java -Dmirai.console.skip-end-user-readme -D=mirai.no-desktop -Dmcl.disable-ansi=true -jar mcl.jar -u $* \"
-"
+	--dev-bind-try $LOAD/data $HOME/data \
+	${Config} $JRE_HOME/bin/java -Djava.io.tmpdir=$HOME/RUNTIME -Dmirai.console.skip-end-user-readme -Dmcl.disable-ansi=true -jar mcl.jar -u $* "
 echo $Part|xargs bwrap
 #  $JRE_HOME/bin/java -D=mirai.no-desktop -Dmcl.disable-ansi=true -jar mcl.jar -u $*
