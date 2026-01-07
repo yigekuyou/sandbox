@@ -1,0 +1,42 @@
+WEMEET_PATH=$(dirname $(readlink -f $0))
+PACK_NAME=wemeet
+BIN_PATH=/opt/$PACK_NAME/bin
+mkdir -p /tmp/$PACK_NAME
+QT5='libQt5Core.so.5 libQt5DBus.so.5 libQt5EglFSDeviceIntegration.so.5 libQt5EglFsKmsSupport.so.5 libQt5Gui.so.5 libQt5Network.so.5 libQt5PrintSupport.so.5 libQt5QmlModels.so.5 libQt5Qml.so.5 libQt5QmlWorkerScript.so.5 libQt5QuickControls2.so.5 libQt5QuickParticles.so.5 libQt5QuickShapes.so.5 libQt5Quick.so.5 libQt5QuickTemplates2.so.5 libQt5QuickTest.so.5 libQt5QuickWidgets.so.5 libQt5Sql.so.5 libQt5Svg.so.5 libQt5Test.so.5 libQt5TextToSpeech.so.5 libQt5Widgets.so.5 libQt5X11Extras.so.5 libQt5XcbQpa.so.5 libQt5XmlPatterns.so.5 libQt5Xml.so.5    '
+ICU='libicudata.so libicui18n.so libicuio.so libicutest.so libicutu.so libicuuc.so'
+for i in $(whereis ./opt/wemeet/lib/* |awk -F/ '$2 {print $4}' )
+do LINK="$LINK	--ro-bind /usr/lib64/$i /opt/$PACK_NAME/lib/$i "
+done
+for i in $ICU $QT5
+do LINK="$LINK	--ro-bind /$WEMEET_PATH/opt/$PACK_NAME/lib/$i /opt/$PACK_NAME/lib/$i "
+done
+bwrap --new-session --unshare-all --share-net  --die-with-parent \
+	--symlink /usr/lib64 /lib64 \
+	--ro-bind /usr/lib /usr/lib \
+	--ro-bind /usr/lib64 /usr/lib64 \
+	--ro-bind /usr/bin /usr/bin \
+	--ro-bind /usr/bin/flatpak-xdg-open /bin/xdg-open \
+	--ro-bind /usr/share /usr/share \
+	--ro-bind /etc/ld.so.cache /etc/ld.so.cache \
+	--ro-bind /etc/ld.so.cache /etc/ld.so.cache \
+	--dev-bind /tmp /tmp \
+	--ro-bind $WEMEET_PATH/opt/$PACK_NAME /opt/$PACK_NAME \
+	--ro-bind $XDG_RUNTIME_DIR $XDG_RUNTIME_DIR \
+	--tmpfs  ${HOME} \
+	--proc /proc \
+	--dev-bind /dev/ /dev $LINK \
+	--ro-bind /dev/null /proc/cpuinfo \
+	--tmpfs /sys/devices/virtual \
+	--ro-bind ${HOME}/.config/gtk-3.0 ${HOME}/.config/gtk-3.0 \
+	--dev-bind-try ${HOME}/.local/share/ ${HOME}/.local/share/ \
+	--ro-bind-try /etc/fonts /etc/fonts \
+	--ro-bind-try ${HOME}/.config/dconf/ ${HOME}/.config/dconf/ \
+	--ro-bind /sys/dev/char /sys/dev/char \
+	--ro-bind /sys/devices /sys/devices \
+	--setenv XDG_SESSION_TYPE $XDG_SESSION_TYPE \
+	--setenv DISPLAY $DISPLAY \
+	--setenv PWD $BIN_PATH \
+	--setenv WAYLAND_DISPLAY $WAYLAND_DISPLAY \
+	--setenv PATH $PATH \
+	-- bash /opt/$PACK_NAME/wemeetapp.sh
+#strace -e trace=file -o /tmp/logs/log
